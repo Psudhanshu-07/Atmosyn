@@ -16,6 +16,10 @@ def _create_engine():
     kwargs: dict = {"future": True}
     if url.startswith("sqlite"):
         kwargs["connect_args"] = {"check_same_thread": False}
+    elif url.startswith("postgresql://"):
+        # Use the installed psycopg (v3) driver explicitly; SQLAlchemy's default
+        # for `postgresql://` is psycopg2, which may not be installed.
+        url = "postgresql+psycopg://" + url[len("postgresql://"):]
     return create_engine(url, **kwargs)
 
 
