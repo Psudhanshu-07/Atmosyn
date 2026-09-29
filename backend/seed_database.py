@@ -333,7 +333,10 @@ def seed_current_run(db, id_map: dict) -> None:
     from app.services import reliability_service
 
     existing = db.query(Forecast).filter(Forecast.lead_day == 1).order_by(Forecast.forecast_run.desc()).first()
-    if existing and existing.forecast_run >= datetime(2026, 9, 28, tzinfo=timezone.utc):
+    existing_run = existing.forecast_run if existing else None
+    if existing_run is not None and existing_run.tzinfo is None:
+        existing_run = existing_run.replace(tzinfo=timezone.utc)
+    if existing_run and existing_run >= datetime(2026, 9, 28, tzinfo=timezone.utc):
         print("current run already seeded — skipping scoring")
         return
 
