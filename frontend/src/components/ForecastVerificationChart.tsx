@@ -107,7 +107,7 @@ export function ForecastVerificationChart({
               type="monotone"
               dataKey="forecast"
               name="Forecast Value"
-              stroke="#0284c7"
+              stroke="#0b8e75"
               strokeWidth={2}
               dot={{ r: 3 }}
             />

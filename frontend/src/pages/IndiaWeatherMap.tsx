@@ -20,11 +20,76 @@ import {
 
 import { Api } from "../lib/api";
 import { fmtTime } from "../lib/format";
-import type { IndiaWeatherMapResponse, StateWeatherPoint } from "../lib/types";
+import type {
+  IndiaWeatherMapResponse,
+  MapConfidenceResponse,
+  StateWeatherPoint,
+} from "../lib/types";
 import { ErrorCard, LoadingCard } from "../components/LoadingError";
 
 interface StateGeoProperties {
   ST_NM: string;
+}
+
+function toReliabilityMap(
+  response: MapConfidenceResponse,
+  leadDay: number,
+): IndiaWeatherMapResponse {
+  const forecastRun = response.forecast_run ?? new Date().toISOString();
+  const confidenceColor = (confidence: number | undefined) => {
+    if (confidence === undefined) return "#94A3B8";
+    if (confidence >= 0.8) return "#0b8e75";
+    if (confidence >= 0.6) return "#d99b18";
+    return "#d84a4a";
+  };
+
+  return {
+    model: "ATMOSYN Reliability",
+    model_version: "Stored prediction data",
+    source: "ATMOSYN prediction database",
+    source_label: "ATMOSYN Forecast Reliability",
+    run_date: forecastRun.slice(0, 10),
+    cycle: forecastRun.slice(11, 13) || "--",
+    run_time: forecastRun,
+    valid_time: new Date(Date.parse(forecastRun) + leadDay * 86400000).toISOString(),
+    lead_day: leadDay,
+    last_updated: response.generated_at ?? forecastRun,
+    is_cached: false,
+    status_note:
+      "GFS data is unavailable. Showing stored regional forecast-reliability estimates; weather details are not available in this view.",
+    disclaimer:
+      "Forecast values and confidence are application estimates from stored prediction data, not live GFS output, observations, or an official weather forecast or warning.",
+    states_count: response.regions.length,
+    states: response.regions.map((region): StateWeatherPoint => {
+      const confidence = region.confidence;
+      const confidenceScore = confidence === undefined ? 0 : Math.round(confidence * 100);
+      return {
+        state_code: region.region_id,
+        state_name: region.state,
+        capital: region.region_name,
+        latitude: region.latitude,
+        longitude: region.longitude,
+        lead_day: leadDay,
+        temperature: response.variable === "temperature" ? region.forecast_value ?? null : null,
+        rainfall: null,
+        rain_probability: null,
+        wind_speed: null,
+        humidity: null,
+        pressure: null,
+        weather_condition: "Forecast reliability estimate",
+        forecast_confidence: confidenceScore,
+        confidence_level:
+          confidence === undefined
+            ? "NO_DATA"
+            : confidence >= 0.8
+              ? "HIGH"
+              : confidence >= 0.6
+                ? "MODERATE"
+                : "LOW",
+        confidence_color: confidenceColor(confidence),
+      };
+    }),
+  };
 }
 
 export function IndiaWeatherMapPage() {
@@ -53,7 +118,14 @@ export function IndiaWeatherMapPage() {
     else setLoading(true);
     setError(null);
     try {
-      const res = await Api.indiaWeatherMap(day, force);
+      let res: IndiaWeatherMapResponse;
+      try {
+        res = await Api.indiaWeatherMap(day, force);
+      } catch {
+        const reliability = await Api.mapConfidence(day, "temperature");
+        if (reliability.regions.length === 0) throw new Error("No regional forecast data is available.");
+        res = toReliabilityMap(reliability, day);
+      }
       setData(res);
       // Update selected state if already chosen
       setSelectedState((prev) => {
@@ -208,20 +280,24 @@ export function IndiaWeatherMapPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-slate-900">India Weather Map</h1>
             <span className="rounded bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-800 uppercase tracking-wide">
-              NOAA GFS 0.25°
+              {data?.model === "GFS" ? "NOAA GFS 0.25°" : "Forecast Reliability"}
             </span>
             {data?.is_cached ? (
               <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
                 Cached Data
               </span>
-            ) : (
+            ) : data?.model === "GFS" ? (
               <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
                 Live Forecast
+              </span>
+            ) : (
+              <span className="rounded bg-teal-100 px-2 py-0.5 text-[10px] font-semibold text-teal-800">
+                Reliability Fallback
               </span>
             )}
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Medium-range NWP forecast & application-estimated Forecast Confidence across all 36 Indian States and Union Territories.
+            Medium-range forecast reliability across monitored regions in India.
           </p>
         </div>
 
@@ -490,7 +566,7 @@ export function IndiaWeatherMapPage() {
                   </div>
                   <div className="flex justify-between">
                     <span>NWP Source:</span>
-                    <span className="text-slate-700 font-medium">NOAA/NCEP NOMADS GFS</span>
+                    <span className="text-slate-700 font-medium">{data.source_label}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Forecast Model Run:</span>

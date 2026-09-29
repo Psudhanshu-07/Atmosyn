@@ -6,6 +6,7 @@ import {
   Bell,
   Brain,
   Cloud,
+  CloudSun,
   Database,
   Info,
   LayoutGrid,
@@ -67,8 +68,9 @@ export function Layout() {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white shadow-xs">
         <div className="flex items-center justify-between px-4 py-2.5">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-600 text-white shadow-xs">
-              <Cloud size={18} />
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-sky-800 via-sky-600 to-teal-500 text-white shadow-md shadow-teal-900/20 ring-1 ring-white/70">
+              <CloudSun size={21} strokeWidth={2.2} />
+              <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-amber-300 ring-2 ring-sky-700" />
             </div>
             <div>
               <div className="text-sm font-bold leading-tight text-slate-900 flex items-center gap-1.5">

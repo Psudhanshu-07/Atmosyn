@@ -28,7 +28,6 @@ import { useAppStore } from "../store";
 export function RegionDetailsPage({ regionId }: { regionId?: string }) {
   const { selectedRegionId, setSelectedRegion, selectedVariable: variable, setSelectedVariable } =
     useAppStore();
-  const effectiveRegion = regionId ?? selectedRegionId;
 
   const [regions, setRegions] = useState<Region[]>([]);
   const [tenDay, setTenDay] = useState<TenDayResponse | null>(null);
@@ -38,18 +37,28 @@ export function RegionDetailsPage({ regionId }: { regionId?: string }) {
   const [fcsts, setFcsts] = useState<Forecast[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const effectiveRegion = regionId ?? selectedRegionId ?? regions[0]?.region_id;
 
   useEffect(() => {
-    Api.regions().then(setRegions).catch(() => setRegions([]));
+    Api.regions()
+      .then(setRegions)
+      .catch((e) => {
+        setRegions([]);
+        setError(e instanceof Error ? e.message : "Unable to load regions");
+        setLoading(false);
+      });
   }, []);
 
   const load = useCallback(async () => {
-    if (!effectiveRegion) return;
+    if (!effectiveRegion) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const [trend, c, h, f] = await Promise.all([
-        Api.confidence10day(effectiveRegion, variable),
+        Api.confidence10day(effectiveRegion, variable).catch(() => null),
         Api.confidence(effectiveRegion, 5, variable).catch(() => null),
         Api.analyticsError(effectiveRegion, variable, 5).catch(() => null),
         Api.forecast(effectiveRegion, undefined, variable).catch(() => []),
@@ -58,7 +67,11 @@ export function RegionDetailsPage({ regionId }: { regionId?: string }) {
       setConf(c);
       setHist(h);
       setFcsts(f);
-      setExpl(c?.prediction_id ? await Api.explanation(c.prediction_id) : null);
+      setExpl(
+        c?.prediction_id
+          ? await Api.explanation(c.prediction_id).catch(() => null)
+          : null,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Region data unavailable");
     } finally {
@@ -204,21 +217,27 @@ export function RegionDetailsPage({ regionId }: { regionId?: string }) {
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
                 10-Day Confidence Trend
               </h2>
-              <ResponsiveContainer width="100%" height={260}>
-                <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 0, left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} unit="%" />
-                  <ReTooltip
-                    formatter={(value, name) => [
-                      `${value}%`,
-                      name === "confidence" ? "Confidence" : "Bust Probability",
-                    ]}
-                  />
-                  <Line type="monotone" dataKey="confidence" stroke="#0284c7" strokeWidth={2} dot />
-                  <Line type="monotone" dataKey="bust" stroke="#dc2626" strokeWidth={2} dot />
-                </LineChart>
-              </ResponsiveContainer>
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 0, left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} unit="%" />
+                    <ReTooltip
+                      formatter={(value, name) => [
+                        `${value}%`,
+                        name === "confidence" ? "Confidence" : "Bust Probability",
+                      ]}
+                    />
+                    <Line type="monotone" dataKey="confidence" stroke="#0b8e75" strokeWidth={2} dot />
+                    <Line type="monotone" dataKey="bust" stroke="#dc2626" strokeWidth={2} dot />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="py-8 text-center text-sm text-slate-500">
+                  No 10-day prediction series is available for this region and variable yet.
+                </p>
+              )}
             </div>
 
             {effectiveRegion && (
