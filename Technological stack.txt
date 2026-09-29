@@ -1,0 +1,1303 @@
+# Tech Stack & Dependency Document for the Website
+
+## 1. Technology Objective
+
+The website shall provide the operational interface for the **AI-Based Forecast Bust Detection System**, connecting users to forecast data, AI predictions, confidence scores, historical error analytics, explanations, and alerts.
+
+The recommended architecture is:
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    WEB FRONTEND                              │
+│ React + Vite + TypeScript + Tailwind CSS                   │
+│ Leaflet + Recharts + Axios                                 │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ REST / JSON
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    BACKEND API                              │
+│ FastAPI + Python                                            │
+│ Authentication + Validation + Business Logic               │
+└──────────────┬──────────────────────┬───────────────────────┘
+               │                      │
+               ▼                      ▼
+┌──────────────────────┐   ┌─────────────────────────────────┐
+│ PostgreSQL + PostGIS │   │ ML / AI Layer                   │
+│ Forecasts            │   │ XGBoost / Scikit-learn           │
+│ Observations         │   │ SHAP                             │
+│ Regions              │   │ Probability Calibration         │
+│ Predictions          │   │                                  │
+└──────────────────────┘   └─────────────────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Weather Data Sources                                        │
+│ NWP Forecasts • Observations • Reanalysis • GeoJSON        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+# 2. Recommended Technology Stack
+
+| Layer               | Technology                  | Purpose                                |
+| ------------------- | --------------------------- | -------------------------------------- |
+| Frontend            | **React**                   | Component-based website                |
+| Build Tool          | **Vite**                    | Fast development/build                 |
+| Language            | **TypeScript**              | Type-safe frontend development         |
+| Styling             | **Tailwind CSS**            | Responsive UI                          |
+| UI Components       | **shadcn/ui**               | Reusable interface components          |
+| Icons               | **Lucide React**            | UI icons                               |
+| Maps                | **Leaflet + React-Leaflet** | India confidence map                   |
+| Charts              | **Recharts**                | Confidence/error charts                |
+| Advanced Charts     | **Plotly.js**               | Heatmaps and scientific visualizations |
+| API Client          | **Axios**                   | Backend communication                  |
+| State Management    | **Zustand**                 | Application state                      |
+| Forms               | **React Hook Form**         | Form handling                          |
+| Validation          | **Zod**                     | Frontend validation                    |
+| Routing             | **React Router**            | Website navigation                     |
+| Backend             | **FastAPI**                 | REST API                               |
+| Backend Language    | **Python 3.11+**            | API + ML                               |
+| Data Processing     | **Pandas**                  | Tabular processing                     |
+| Numerical Computing | **NumPy**                   | Numerical operations                   |
+| Weather Data        | **xarray**                  | NetCDF/gridded weather data            |
+| GRIB Processing     | **cfgrib / eccodes**        | GRIB/NWP data                          |
+| ML                  | **XGBoost**                 | Bust prediction                        |
+| ML Utilities        | **Scikit-learn**            | Preprocessing/evaluation               |
+| Explainability      | **SHAP**                    | AI explanation                         |
+| Database            | **PostgreSQL**              | Primary database                       |
+| Spatial DB          | **PostGIS**                 | Geographic data                        |
+| Caching             | **Redis**                   | Optional caching                       |
+| ORM                 | **SQLAlchemy**              | Database access                        |
+| Migration           | **Alembic**                 | Database migrations                    |
+| API Server          | **Uvicorn**                 | FastAPI server                         |
+| Containerization    | **Docker**                  | Reproducible deployment                |
+| Reverse Proxy       | **Nginx**                   | Production routing                     |
+| Testing             | **Pytest + Vitest**         | Backend/frontend tests                 |
+| API Documentation   | **OpenAPI / Swagger**       | API documentation                      |
+
+---
+
+# 3. Frontend Technology
+
+## 3.1 React
+
+**Purpose:** Main website framework.
+
+React should be used to create reusable components such as:
+
+* Dashboard
+* KPI cards
+* India map
+* Risk badges
+* Forecast charts
+* AI explanation panel
+* Alert table
+* Region details
+
+Recommended version:
+
+```text
+React 18+
+```
+
+---
+
+# 4. TypeScript
+
+TypeScript should be used instead of plain JavaScript for the production frontend.
+
+Benefits:
+
+* Type-safe API responses
+* Easier refactoring
+* Fewer runtime errors
+* Better IDE support
+* Clear data models
+
+Example:
+
+```typescript
+interface ConfidencePrediction {
+  region_id: string;
+  lead_day: number;
+  variable: string;
+  bust_probability: number;
+  confidence_score: number;
+  risk_level: string;
+  expected_error: number;
+}
+```
+
+---
+
+# 5. Vite
+
+Vite will be used as the frontend build tool.
+
+### Why Vite?
+
+* Fast development server
+* Fast hot reload
+* Simple configuration
+* Suitable for React
+* Good hackathon development experience
+
+Project initialization:
+
+```bash
+npm create vite@latest frontend -- --template react-ts
+```
+
+---
+
+# 6. Tailwind CSS
+
+Tailwind CSS will provide the website styling system.
+
+It should be used for:
+
+* Layout
+* Cards
+* Buttons
+* Tables
+* Responsive design
+* Navigation
+* Risk indicators
+* Spacing
+* Typography
+
+Example:
+
+```text
+Dashboard
+├── Header
+├── Sidebar
+├── KPI Cards
+├── Map
+└── Analytics
+```
+
+---
+
+# 7. shadcn/ui
+
+Recommended for reusable UI primitives.
+
+Components can include:
+
+* Button
+* Card
+* Dialog
+* Select
+* Tabs
+* Tooltip
+* Dropdown
+* Badge
+* Table
+* Alert
+* Sheet
+
+This allows the team to build a professional interface quickly without creating every component from scratch.
+
+---
+
+# 8. Leaflet
+
+Leaflet will be the primary mapping library.
+
+### Required functionality
+
+* India map
+* Region polygons
+* State/district boundaries
+* Map zoom
+* Pan
+* Region selection
+* Hover tooltips
+* Confidence visualization
+* Risk visualization
+
+Recommended combination:
+
+```text
+Leaflet
++
+React-Leaflet
++
+GeoJSON
+```
+
+Example architecture:
+
+```text
+IndiaMap
+ ├── GeoJSONLayer
+ ├── RegionPolygon
+ ├── MapTooltip
+ ├── MapLegend
+ └── RegionDrawer
+```
+
+---
+
+# 9. Geographic Data
+
+The website should consume GeoJSON rather than hard-code geographic boundaries.
+
+Example:
+
+```json
+{
+  "type": "Feature",
+  "properties": {
+    "region_id": "MH",
+    "name": "Maharashtra"
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": []
+  }
+}
+```
+
+This allows the map to be updated independently from the application logic.
+
+---
+
+# 10. Charting
+
+## Primary chart library: Recharts
+
+Use Recharts for:
+
+* Confidence trends
+* Bust probability
+* Historical MAE
+* RMSE
+* Lead-day comparison
+* Forecast vs observation
+
+Example:
+
+```text
+Confidence
+100 ┤●
+ 80 ┤ ●
+ 60 ┤   ●
+ 40 ┤      ●
+ 20 ┤          ●
+    └────────────
+      D1 D2 D3 D4 D5
+```
+
+## Plotly.js
+
+Use Plotly where more advanced scientific visualization is needed:
+
+* Heatmaps
+* Error distributions
+* Multidimensional analysis
+* Advanced interactive plots
+
+---
+
+# 11. Frontend State Management
+
+Recommended:
+
+**Zustand**
+
+Application state:
+
+```text
+selectedRegion
+selectedVariable
+selectedLeadDay
+selectedForecastRun
+confidenceData
+forecastData
+predictionData
+explanationData
+alerts
+dataQuality
+modelStatus
+loading
+error
+```
+
+Example:
+
+```typescript
+interface AppState {
+  selectedRegion: string | null;
+  selectedVariable: string;
+  selectedLeadDay: number;
+  setSelectedRegion: (region: string) => void;
+  setSelectedVariable: (variable: string) => void;
+  setSelectedLeadDay: (day: number) => void;
+}
+```
+
+---
+
+# 12. API Communication
+
+Use **Axios** for frontend → backend communication.
+
+```text
+React
+  ↓
+Axios
+  ↓
+FastAPI
+  ↓
+PostgreSQL / ML
+```
+
+Recommended API base URL:
+
+```text
+/api/v1
+```
+
+Example:
+
+```text
+GET /api/v1/confidence
+GET /api/v1/confidence/10day
+GET /api/v1/map/confidence
+GET /api/v1/explanation/{prediction_id}
+```
+
+---
+
+# 13. Frontend Validation
+
+Use **Zod** for validating API responses and user input where appropriate.
+
+Example:
+
+```text
+lead_day
+→ integer
+→ minimum 1
+→ maximum 10
+```
+
+This prevents invalid UI state from being sent to the backend.
+
+---
+
+# 14. Backend Technology
+
+## FastAPI
+
+FastAPI will serve as the central REST API.
+
+Responsibilities:
+
+* Forecast retrieval
+* Confidence retrieval
+* Bust prediction
+* AI explanations
+* Historical analytics
+* Alerts
+* Data health
+* Model information
+
+Example:
+
+```text
+FastAPI
+├── /forecast
+├── /confidence
+├── /map
+├── /predict
+├── /explanation
+├── /analytics
+├── /alerts
+├── /models
+└── /health
+```
+
+---
+
+# 15. Python
+
+Recommended:
+
+```text
+Python 3.11+
+```
+
+Python is used for:
+
+* FastAPI
+* Data processing
+* ML
+* Weather data processing
+* Feature engineering
+* SHAP
+* Database services
+
+---
+
+# 16. Weather Data Processing
+
+## Pandas
+
+Use for:
+
+* CSV processing
+* Historical error tables
+* Aggregation
+* Data cleaning
+* Statistical calculations
+
+## NumPy
+
+Use for:
+
+* Numerical operations
+* Arrays
+* Model inputs
+* Error calculations
+
+## xarray
+
+Especially important for weather data.
+
+Use it for:
+
+* NetCDF
+* Gridded weather datasets
+* Latitude/longitude grids
+* Time-series atmospheric data
+
+Architecture:
+
+```text
+GRIB / NetCDF
+      ↓
+  xarray
+      ↓
+Data Cleaning
+      ↓
+Spatial/Temporal Matching
+      ↓
+Feature Engineering
+```
+
+---
+
+# 17. GRIB/NWP Dependencies
+
+For NWP data, the backend should support:
+
+```text
+cfgrib
+eccodes
+xarray
+```
+
+These libraries enable processing of common meteorological formats.
+
+The exact dependency set can vary depending on the selected NWP dataset.
+
+---
+
+# 18. Machine Learning Stack
+
+## XGBoost
+
+Primary model for:
+
+### Model A — Error Prediction
+
+```text
+Input Features
+      ↓
+XGBoost Regressor
+      ↓
+Expected Forecast Error
+```
+
+### Model B — Bust Classification
+
+```text
+Input Features
+      ↓
+XGBoost Classifier
+      ↓
+Bust Probability
+```
+
+---
+
+# 19. Scikit-learn
+
+Use Scikit-learn for:
+
+* Train/test splitting
+* Feature preprocessing
+* Metrics
+* Cross-validation
+* Calibration
+* Pipelines
+* Baseline models
+
+Potential baseline:
+
+```text
+Random Forest
+```
+
+before using XGBoost.
+
+---
+
+# 20. Probability Calibration
+
+The raw classifier probability should not automatically be treated as a reliable probability.
+
+Recommended:
+
+```text
+XGBoost Classifier
+       ↓
+Probability Calibration
+       ↓
+Calibrated Bust Probability
+       ↓
+Confidence
+```
+
+Possible methods:
+
+* Isotonic calibration
+* Platt scaling / sigmoid calibration
+
+---
+
+# 21. SHAP
+
+SHAP will provide model explainability.
+
+Example:
+
+```text
+Historical MAE        ███████████████
+Run-to-run change     ███████████
+Ensemble spread       █████████
+Humidity              █████
+Pressure              ██
+```
+
+The backend should return structured feature contributions to the frontend.
+
+---
+
+# 22. Database
+
+## PostgreSQL
+
+Primary database.
+
+Stores:
+
+* Regions
+* Forecast runs
+* Forecast data
+* Observations
+* Errors
+* Historical statistics
+* Predictions
+* Alerts
+* Model versions
+
+---
+
+# 23. PostGIS
+
+PostGIS extends PostgreSQL with spatial capabilities.
+
+Use it for:
+
+* Region geometries
+* Spatial queries
+* Geographic boundaries
+* Region-to-grid matching
+* Map data
+
+Example:
+
+```text
+regions.geometry
+       ↓
+PostGIS
+       ↓
+India Map / Spatial Queries
+```
+
+---
+
+# 24. SQLAlchemy
+
+Use SQLAlchemy as the Python database layer.
+
+Architecture:
+
+```text
+FastAPI
+   ↓
+Service Layer
+   ↓
+SQLAlchemy
+   ↓
+PostgreSQL
+```
+
+Avoid putting complex database queries directly inside API route handlers.
+
+---
+
+# 25. Alembic
+
+Alembic manages database schema migrations.
+
+Example:
+
+```text
+Migration 001
+→ Initial schema
+
+Migration 002
+→ Add model_versions
+
+Migration 003
+→ Add alerts
+
+Migration 004
+→ Add data quality fields
+```
+
+---
+
+# 26. Redis
+
+Redis is **optional for the MVP**.
+
+Use it for:
+
+* API response caching
+* Frequently accessed confidence maps
+* Dashboard data
+* Short-lived prediction results
+* Background task coordination
+
+Example:
+
+```text
+Frontend
+   ↓
+FastAPI
+   ↓
+Redis Cache
+   ↓
+PostgreSQL
+```
+
+Do not make Redis mandatory if the team wants the simplest hackathon architecture.
+
+---
+
+# 27. Background Processing
+
+For the prototype, scheduled processing can initially be handled through:
+
+* Cron
+* FastAPI scheduled jobs
+* Simple Python scripts
+
+For a larger deployment, use:
+
+* Celery
+* Redis
+* Dedicated workers
+
+### MVP recommendation
+
+Avoid unnecessary distributed infrastructure.
+
+---
+
+# 28. Authentication
+
+Authentication is optional for the hackathon MVP.
+
+If required:
+
+```text
+Frontend
+   ↓
+Login
+   ↓
+JWT
+   ↓
+FastAPI
+```
+
+Potential implementation:
+
+* OAuth2
+* JWT
+* FastAPI security utilities
+
+For a public demonstration, read-only access can be used instead.
+
+---
+
+# 29. File/Data Upload
+
+The backend should support:
+
+```text
+CSV
+JSON
+NetCDF
+GRIB
+```
+
+Flow:
+
+```text
+Upload
+   ↓
+File Validation
+   ↓
+Schema Validation
+   ↓
+Meteorological Validation
+   ↓
+Processing
+   ↓
+Database
+```
+
+Invalid files should generate clear error messages.
+
+---
+
+# 30. API Documentation
+
+FastAPI automatically provides:
+
+```text
+Swagger UI
+OpenAPI specification
+ReDoc
+```
+
+Recommended development URLs:
+
+```text
+/api/docs
+/api/redoc
+/openapi.json
+```
+
+This is useful for frontend/backend integration during the hackathon.
+
+---
+
+# 31. Testing Stack
+
+## Frontend
+
+### Vitest
+
+Unit testing:
+
+* Components
+* Utility functions
+* State management
+
+### React Testing Library
+
+UI behavior:
+
+* Button interaction
+* Filters
+* Map-related controls
+* Dashboard states
+
+---
+
+## Backend
+
+### Pytest
+
+Test:
+
+* API endpoints
+* Data validation
+* ML prediction services
+* Error handling
+* Database operations
+
+---
+
+# 32. API Testing
+
+Use:
+
+* Swagger UI
+* Postman
+* curl
+
+Example:
+
+```bash
+curl http://localhost:8000/api/v1/health
+```
+
+Expected:
+
+```json
+{
+  "status": "healthy"
+}
+```
+
+---
+
+# 33. Code Quality
+
+Recommended tools:
+
+| Tool     | Purpose                       |
+| -------- | ----------------------------- |
+| ESLint   | Frontend linting              |
+| Prettier | Frontend formatting           |
+| Ruff     | Python linting                |
+| Black    | Python formatting             |
+| MyPy     | Optional Python type checking |
+| Husky    | Optional Git hooks            |
+
+---
+
+# 34. Environment Configuration
+
+Use environment variables.
+
+### Frontend
+
+```text
+VITE_API_BASE_URL
+VITE_MAP_TILE_URL
+```
+
+### Backend
+
+```text
+DATABASE_URL
+REDIS_URL
+MODEL_PATH
+NWP_DATA_PATH
+OBSERVATION_DATA_PATH
+CORS_ORIGINS
+ENVIRONMENT
+```
+
+Never commit secrets to Git.
+
+---
+
+# 35. Project Dependency Structure
+
+```text id="9gq6q8"
+ai-forecast-bust/
+│
+├── frontend/
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   └── src/
+│
+├── backend/
+│   ├── requirements.txt
+│   ├── pyproject.toml
+│   └── app/
+│
+├── ml/
+│   ├── requirements.txt
+│   ├── training/
+│   ├── preprocessing/
+│   └── models/
+│
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   └── sample/
+│
+├── database/
+│   ├── migrations/
+│   └── schema.sql
+│
+├── docker-compose.yml
+├── .env.example
+└── README.md
+```
+
+---
+
+# 36. Frontend Dependencies
+
+Recommended `package.json` dependencies:
+
+```text
+react
+react-dom
+react-router-dom
+axios
+zustand
+react-hook-form
+zod
+@hookform/resolvers
+leaflet
+react-leaflet
+recharts
+plotly.js
+react-plotly.js
+lucide-react
+```
+
+UI/build dependencies:
+
+```text
+vite
+typescript
+tailwindcss
+eslint
+prettier
+vitest
+@testing-library/react
+```
+
+---
+
+# 37. Backend Dependencies
+
+Recommended Python dependencies:
+
+```text
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+sqlalchemy
+psycopg
+alembic
+python-multipart
+pandas
+numpy
+xarray
+scikit-learn
+xgboost
+shap
+joblib
+```
+
+Weather/NWP processing:
+
+```text
+cfgrib
+eccodes
+netcdf4
+```
+
+Optional:
+
+```text
+redis
+celery
+```
+
+---
+
+# 38. Development Environment
+
+Recommended:
+
+```text
+Node.js 20+
+Python 3.11+
+PostgreSQL 16+
+Docker
+Git
+VS Code
+```
+
+The exact versions should be pinned in project configuration once development begins.
+
+---
+
+# 39. Docker Architecture
+
+For reproducible development:
+
+```text id="r0x04e"
+                    Docker Compose
+                         │
+        ┌────────────────┼────────────────┐
+        │                │                │
+        ▼                ▼                ▼
+   Frontend          Backend          Database
+   React/Vite        FastAPI       PostgreSQL/PostGIS
+        │                │
+        │                ├──────────► Redis
+        │                │
+        │                └──────────► ML Model
+        │
+        ▼
+      Browser
+```
+
+---
+
+# 40. Recommended Docker Services
+
+### MVP
+
+```yaml
+services:
+  frontend:
+  backend:
+  postgres:
+```
+
+### Extended
+
+```yaml
+services:
+  frontend:
+  backend:
+  postgres:
+  redis:
+  worker:
+```
+
+The extended architecture should only be introduced if required.
+
+---
+
+# 41. Website Deployment Architecture
+
+```text
+                    Internet
+                       │
+                       ▼
+                    Nginx
+                       │
+              ┌────────┴────────┐
+              ▼                 ▼
+          React SPA          FastAPI
+                                │
+                  ┌─────────────┼─────────────┐
+                  ▼             ▼             ▼
+              PostgreSQL      Redis          ML
+```
+
+---
+
+# 42. Production Build
+
+Frontend:
+
+```bash
+npm run build
+```
+
+Produces:
+
+```text
+frontend/dist/
+```
+
+Backend:
+
+```bash
+uvicorn app.main:app
+```
+
+Production should run the built frontend behind Nginx or another suitable web server/reverse proxy.
+
+---
+
+# 43. Dependency Management Strategy
+
+### Frontend
+
+Use:
+
+```text
+package.json
+package-lock.json
+```
+
+### Backend
+
+Use:
+
+```text
+pyproject.toml
+requirements.txt
+```
+
+### Containers
+
+Use:
+
+```text
+Dockerfile
+docker-compose.yml
+```
+
+All production dependencies should be version-pinned to reduce unexpected changes during deployment.
+
+---
+
+# 44. Free/Open-Source Requirement
+
+The recommended stack is designed to avoid paid software dependencies.
+
+| Technology    | Cost for Project                        |
+| ------------- | --------------------------------------- |
+| React         | Free                                    |
+| Vite          | Free                                    |
+| TypeScript    | Free                                    |
+| Tailwind      | Free                                    |
+| Leaflet       | Free/open source                        |
+| Recharts      | Free/open source                        |
+| FastAPI       | Free/open source                        |
+| Python        | Free                                    |
+| PostgreSQL    | Free/open source                        |
+| PostGIS       | Free/open source                        |
+| XGBoost       | Free/open source                        |
+| Scikit-learn  | Free/open source                        |
+| SHAP          | Free/open source                        |
+| Docker        | Free for the intended development use   |
+| Git           | Free                                    |
+| OpenStreetMap | Free to use subject to its usage policy |
+| Nginx         | Free/open source                        |
+
+---
+
+# 45. Recommended MVP Dependency Set
+
+To avoid overengineering the hackathon prototype, the **minimum stack** should be:
+
+```text
+Frontend
+────────
+React
+TypeScript
+Vite
+Tailwind CSS
+Leaflet
+Recharts
+Axios
+Zustand
+
+Backend
+───────
+Python
+FastAPI
+Pydantic
+SQLAlchemy
+
+Data
+────
+Pandas
+NumPy
+xarray
+
+ML
+──
+Scikit-learn
+XGBoost
+SHAP
+
+Database
+────────
+PostgreSQL
+PostGIS
+
+Deployment
+──────────
+Docker
+```
+
+Redis, Celery, Plotly, authentication, and advanced monitoring can be added only if time permits.
+
+---
+
+# 46. Recommended Final Stack
+
+For the hackathon implementation, the final technology decision should be:
+
+```text id="uhv0j2"
+┌────────────────────────────────────────────────────────────┐
+│                       WEBSITE                              │
+│                                                            │
+│ React + TypeScript + Vite + Tailwind                      │
+│                                                            │
+│ Leaflet                         Recharts                   │
+│ India Map                       Analytics                  │
+└─────────────────────────┬──────────────────────────────────┘
+                          │
+                       REST API
+                          │
+                          ▼
+┌────────────────────────────────────────────────────────────┐
+│                       BACKEND                              │
+│                                                            │
+│ FastAPI + Python                                           │
+└───────────────┬────────────────────────┬───────────────────┘
+                │                        │
+                ▼                        ▼
+┌─────────────────────────┐   ┌─────────────────────────────┐
+│ PostgreSQL + PostGIS    │   │ AI/ML                       │
+│                         │   │                             │
+│ Forecasts               │   │ XGBoost                     │
+│ Observations            │   │ Scikit-learn                │
+│ Errors                  │   │ SHAP                        │
+│ Predictions             │   │ Calibration                 │
+│ Regions                 │   │                             │
+└─────────────────────────┘   └─────────────────────────────┘
+                ▲
+                │
+                │
+┌────────────────────────────────────────────────────────────┐
+│                 WEATHER DATA PIPELINE                      │
+│                                                            │
+│ NWP Forecast + Observations + Historical Data + GeoJSON   │
+└────────────────────────────────────────────────────────────┘
+```
+
+## 47. Technology Selection Rationale
+
+The stack is intentionally centered on **React + FastAPI + PostgreSQL/PostGIS + Python ML** because it cleanly separates the system into four responsibilities:
+
+**React** → presents the forecast reliability information.
+
+**FastAPI** → exposes the prediction and analytics APIs.
+
+**PostgreSQL/PostGIS** → stores and queries temporal and geographic weather information.
+
+**Python ML stack** → calculates forecast error, bust probability, confidence, and explanations.
+
+This gives the team a relatively simple architecture while still supporting the complete flow required by the problem statement:
+
+**Real Weather Data → NWP Forecast → Historical Error → ML Bust Detection → Confidence → Explainable AI → Interactive Website.**

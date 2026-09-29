@@ -1,0 +1,121 @@
+## AI/LLM Specification
+
+For **PS 26079 – AI-Based Forecast Bust Detection**, the system should primarily use **ML models for numerical weather forecast reliability prediction**. An LLM is **optional**, and should be used only for generating human-readable explanations rather than making the actual bust prediction.
+
+| Component                       | Specification                                                                         | Recommended Technology                                 | Cost |
+| ------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------ | ---- |
+| **Primary AI Model**            | Predict probability that an NWP forecast will experience a significant error (“bust”) | XGBoost / LightGBM / Random Forest                     | Free |
+| **Error Prediction Model**      | Predict expected forecast error for each region and lead day                          | XGBoost Regressor                                      | Free |
+| **Classification Model**        | Predict bust probability between 0–1                                                  | XGBoost Classifier                                     | Free |
+| **Confidence Engine**           | Convert model output into forecast reliability score                                  | Custom Python logic + calibrated probability           | Free |
+| **Probability Calibration**     | Ensure predicted probabilities are meaningful                                         | Isotonic Regression / Platt Scaling                    | Free |
+| **Explainable AI**              | Identify factors responsible for high bust probability                                | SHAP                                                   | Free |
+| **Weather Event Detection**     | Detect conditions such as heavy rainfall, cyclone, heat wave, monsoon disturbance     | Rule-based + ML classification                         | Free |
+| **Historical Pattern Analysis** | Compare current forecast conditions with historical forecast-error patterns           | Pandas + XGBoost                                       | Free |
+| **LLM Layer**                   | Convert model outputs into simple meteorological explanations                         | Optional local LLM                                     | Free |
+| **LLM Input**                   | Only structured model results and meteorological factors                              | JSON                                                   | Free |
+| **LLM Output**                  | Human-readable explanation                                                            | Local LLM / template engine                            | Free |
+| **Model Training**              | Train using historical forecast + observation pairs                                   | Python                                                 | Free |
+| **Model Evaluation**            | Measure prediction quality                                                            | MAE, RMSE, Precision, Recall, F1, ROC-AUC, Brier Score | Free |
+
+### Recommended AI Architecture
+
+```text
+                 NWP FORECAST
+                      │
+                      ▼
+              ┌───────────────┐
+              │ Feature       │
+              │ Engineering   │
+              └───────┬───────┘
+                      │
+       ┌──────────────┼──────────────┐
+       │              │              │
+       ▼              ▼              ▼
+ Historical       Current        Atmospheric
+ Error Patterns   Forecast       Conditions
+       │              │              │
+       └──────────────┼──────────────┘
+                      ▼
+               ┌──────────────┐
+               │ XGBoost      │
+               │ Models       │
+               └──────┬───────┘
+                      │
+          ┌───────────┴───────────┐
+          ▼                       ▼
+   Expected Error          Bust Probability
+          │                       │
+          └───────────┬───────────┘
+                      ▼
+             Probability
+               Calibration
+                      │
+                      ▼
+             Forecast Confidence
+                      │
+             ┌────────┴────────┐
+             ▼                 ▼
+           SHAP              LLM / Template
+        Explanation           Explanation
+             │                 │
+             └────────┬────────┘
+                      ▼
+                Dashboard/API
+```
+
+### Suggested ML Features
+
+The model should consider:
+
+* Forecast lead time: **Day 1–Day 10**
+* Forecast temperature
+* Forecast rainfall
+* Forecast wind speed
+* Forecast pressure
+* Forecast humidity
+* Historical MAE/RMSE
+* Historical bust frequency
+* Seasonal/monsoon information
+* Region/grid location
+* Forecast run-to-run change
+* Ensemble spread, if available
+* Atmospheric instability indicators, if available
+* Nearby-region forecast disagreement
+* Weather-event indicators
+* Previous forecast error patterns
+
+### LLM's Role
+
+**Do not use an LLM to predict the bust probability.**
+
+Instead:
+
+```text
+XGBoost
+   ↓
+Bust probability = 82%
+Expected error = 43 mm
+   ↓
+SHAP
+   ↓
+Top factors:
+• High ensemble spread
+• Large forecast run change
+• Historically high rainfall error
+• Day-6 lead time
+   ↓
+LLM
+   ↓
+"Confidence is low because the current rainfall
+forecast shows high uncertainty and has changed
+significantly between recent forecast runs..."
+```
+
+This makes the system more **explainable, reliable, and technically defensible**.
+
+### Optional LLM
+
+If you want an LLM without paying for an API, use a **local open-source model** through tools such as Ollama. The LLM can receive only structured information from your ML system and generate the explanation.
+
+However, **the LLM is not required by the PS**. Your core AI should be the **forecast-error/bust prediction model + explainability layer**.

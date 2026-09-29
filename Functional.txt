@@ -1,0 +1,71 @@
+## Functional Requirements
+
+| **FR ID** | **Functional Requirement**      | **Description**                                                                                                                                                                                                               | **Priority** |
+| --------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| FR-01     | User Access                     | Users shall be able to access the web application through a browser without requiring specialized software.                                                                                                                   | High         |
+| FR-02     | Dashboard                       | The system shall provide a central dashboard showing forecast confidence, bust probability, risk level, and affected regions.                                                                                                 | High         |
+| FR-03     | India Weather Map               | The system shall display an interactive geographical map of India showing region-wise forecast confidence and forecast-bust risk.                                                                                             | High         |
+| FR-04     | Lead-Time Selection             | Users shall be able to select forecast lead times from **Day 1 to Day 10**.                                                                                                                                                   | High         |
+| FR-05     | Region Selection                | Users shall be able to select a state, district, or grid region and view detailed forecast reliability information.                                                                                                           | High         |
+| FR-06     | Forecast Data Ingestion         | The system shall accept and process NWP forecast data containing relevant meteorological variables.                                                                                                                           | High         |
+| FR-07     | Observation Data Ingestion      | The system shall accept historical/observed weather data for comparison with NWP forecasts.                                                                                                                                   | High         |
+| FR-08     | Forecast-Observation Matching   | The system shall match forecast data with corresponding observations based on location, date/time, and forecast lead time.                                                                                                    | High         |
+| FR-09     | Forecast Error Calculation      | The system shall calculate forecast errors using appropriate metrics such as MAE, RMSE, absolute error, and percentage error where applicable.                                                                                | High         |
+| FR-10     | Forecast Bust Identification    | The system shall identify a forecast as a potential **forecast bust** when the predicted/observed error exceeds the configured threshold or learned criterion.                                                                | High         |
+| FR-11     | Bust Probability Prediction     | The AI/ML model shall generate a probability of forecast bust for each supported region and forecast lead time.                                                                                                               | High         |
+| FR-12     | Confidence Score                | The system shall generate a forecast confidence indicator based on the estimated likelihood of forecast error/bust.                                                                                                           | High         |
+| FR-13     | Risk Classification             | The system shall classify forecast reliability into understandable risk categories such as Very Low, Low, Moderate, High, and Very High.                                                                                      | High         |
+| FR-14     | Region-Wise Confidence          | The system shall provide confidence information for individual geographical regions rather than only a country-level score.                                                                                                   | High         |
+| FR-15     | Day 1–Day 10 Confidence         | The system shall generate separate forecast confidence and bust probability values for each forecast lead time from Day 1 through Day 10.                                                                                     | High         |
+| FR-16     | Historical Error Analysis       | The system shall analyze historical forecast errors by region, variable, weather event, and lead time.                                                                                                                        | High         |
+| FR-17     | Forecast Run Comparison         | The system shall compare successive NWP forecast runs and identify significant changes in forecast values.                                                                                                                    | Medium       |
+| FR-18     | Ensemble Uncertainty            | Where ensemble forecast data is available, the system shall calculate ensemble spread/disagreement as an uncertainty feature.                                                                                                 | Medium       |
+| FR-19     | Weather Variable Analysis       | The system shall support relevant variables such as rainfall, temperature, wind, pressure, humidity, and other available meteorological parameters.                                                                           | High         |
+| FR-20     | Weather Event Detection         | The system shall support analysis of challenging weather situations such as heavy rainfall, cyclones, monsoon depressions, western disturbances, heat waves, and active/break monsoon phases when suitable data is available. | Medium       |
+| FR-21     | Explainable AI                  | The system shall provide human-readable reasons for low forecast confidence or high bust probability.                                                                                                                         | High         |
+| FR-22     | Feature Contribution            | The system shall identify important contributing factors/features behind an AI prediction using an explainability technique such as SHAP or equivalent.                                                                       | Medium       |
+| FR-23     | Forecast Details                | Users shall be able to view the underlying forecast values along with the corresponding confidence and bust probability.                                                                                                      | High         |
+| FR-24     | Historical Charts               | The system shall provide charts showing forecast versus observed values and historical forecast errors.                                                                                                                       | High         |
+| FR-25     | Confidence Trend                | The system shall display how forecast confidence changes from Day 1 to Day 10 for a selected region.                                                                                                                          | High         |
+| FR-26     | Error Heatmap                   | The system shall provide a geographical heatmap of historical or predicted forecast error.                                                                                                                                    | Medium       |
+| FR-27     | Data Filtering                  | Users shall be able to filter information by date, region, forecast day, weather variable, and weather event where applicable.                                                                                                | Medium       |
+| FR-28     | Search                          | Users shall be able to search for a specific region/location and view its forecast reliability information.                                                                                                                   | Medium       |
+| FR-29     | Data Upload                     | Authorized users shall be able to upload forecast and observation datasets in supported formats such as CSV/NetCDF.                                                                                                           | Medium       |
+| FR-30     | Data Validation                 | The system shall validate uploaded data for missing fields, invalid values, incorrect timestamps, duplicate records, and geographic inconsistencies.                                                                          | High         |
+| FR-31     | ML Prediction API               | The backend shall expose an API for obtaining bust probability, confidence, risk level, and explanation for a selected region and lead time.                                                                                  | High         |
+| FR-32     | Map Data API                    | The backend shall provide geographical prediction data required to render the confidence/bust map.                                                                                                                            | High         |
+| FR-33     | Historical Data API             | The backend shall provide historical forecast-error and performance data to the frontend.                                                                                                                                     | Medium       |
+| FR-34     | Model Management                | The system shall support loading a trained ML model and using it to generate predictions on new forecast data.                                                                                                                | High         |
+| FR-35     | Model Performance               | The system shall calculate and display model performance metrics such as Precision, Recall, F1-score, ROC-AUC, and calibration metrics.                                                                                       | Medium       |
+| FR-36     | Prediction History              | The system shall store generated predictions so that forecast confidence and bust predictions can be analyzed later.                                                                                                          | Medium       |
+| FR-37     | Alert Generation                | The system may generate alerts when bust probability or forecast uncertainty exceeds a configurable threshold.                                                                                                                | Medium       |
+| FR-38     | Alert Details                   | Alerts shall identify the affected region, forecast lead time, risk level, and major contributing factors.                                                                                                                    | Medium       |
+| FR-39     | Data Refresh                    | The system shall support updating forecast data and regenerating predictions when a new NWP forecast run becomes available.                                                                                                   | High         |
+| FR-40     | Dashboard Refresh               | The dashboard shall update map, charts, confidence, and risk information after new predictions are generated.                                                                                                                 | High         |
+| FR-41     | API Health Monitoring           | The system shall provide basic API/model/data-service health status for operational monitoring.                                                                                                                               | Low          |
+| FR-42     | Error Handling                  | The system shall display meaningful error messages when forecast data, observation data, model predictions, or APIs are unavailable or invalid.                                                                               | High         |
+| FR-43     | Methodology Information         | The application shall provide a methodology section explaining the data, forecast-error calculation, AI model, confidence score, and limitations.                                                                             | Medium       |
+| FR-44     | Model Explainability Disclaimer | The system shall clearly indicate that the generated confidence/bust probability is an AI-based reliability indicator and not a replacement for the official weather forecast.                                                | High         |
+| FR-45     | Export                          | Users shall be able to export selected prediction, confidence, and analytical results in a suitable format such as CSV or PDF.                                                                                                | Low          |
+
+### Core MVP Functional Requirements
+
+For the **first working prototype**, focus on these:
+
+**FR-02 → Dashboard**
+**FR-03 → India Confidence Map**
+**FR-04 → Day 1–10 Selection**
+**FR-05 → Region Selection**
+**FR-07 → Observation Data**
+**FR-09 → Error Calculation**
+**FR-10 → Bust Detection**
+**FR-11 → Bust Probability**
+**FR-12 → Confidence Score**
+**FR-13 → Risk Classification**
+**FR-21 → Explainable AI**
+**FR-24 → Historical Charts**
+**FR-31 → ML Prediction API**
+**FR-39 → Forecast Data Refresh**
+
+These requirements form the **minimum end-to-end system**:
+**Data → Error Analysis → AI Prediction → Bust Probability → Confidence → Explanation → Map/Dashboard.**

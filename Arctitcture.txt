@@ -1,0 +1,1229 @@
+# Technical Architecture Document
+
+## AI-Based Forecast Bust Detection for Medium-Range Weather Forecasts
+
+**Problem Statement ID:** 26079
+**Organization:** Ministry of Earth Sciences (MoES)
+**Department:** National Centre for Medium Range Weather Forecasting (NCMRWF)
+**Application Type:** AI/ML + Geospatial Web Application
+**Primary Objective:** Detect regions and lead times where medium-range NWP forecasts are likely to have high uncertainty or large errors and provide an explainable forecast-confidence indicator.
+
+---
+
+## 1. Architecture Overview
+
+The proposed system follows a **data → analytics → ML → prediction → visualization** architecture.
+
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│                         DATA SOURCES                             │
+├──────────────────────────────────────────────────────────────────┤
+│ NWP Forecast │ Historical Forecasts │ Observations │ Reanalysis │
+│              │                      │              │ Satellite   │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │
+                             ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                    DATA INGESTION LAYER                          │
+├──────────────────────────────────────────────────────────────────┤
+│ API Connector │ CSV/NetCDF Upload │ Scheduled Data Ingestion    │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │
+                             ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                 DATA PROCESSING & QUALITY LAYER                  │
+├──────────────────────────────────────────────────────────────────┤
+│ Validation │ Cleaning │ Missing Values │ Time Alignment         │
+│ Spatial Alignment │ Forecast-Observation Matching               │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │
+                             ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                   FEATURE ENGINEERING                            │
+├──────────────────────────────────────────────────────────────────┤
+│ Forecast Error │ Historical Error │ Lead Time │ Run-to-Run       │
+│ Change │ Ensemble Spread │ Atmospheric Variables │ Geography     │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │
+                             ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                        ML ENGINE                                 │
+├──────────────────────────────────────────────────────────────────┤
+│ Error Prediction Model │ Bust Classification │ Calibration       │
+│ XGBoost / Random Forest │ SHAP Explainability                    │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │
+                             ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                  FORECAST RELIABILITY ENGINE                     │
+├──────────────────────────────────────────────────────────────────┤
+│ Bust Probability │ Confidence Score │ Risk Level │ Key Reasons    │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │
+                             ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                       API LAYER                                  │
+├──────────────────────────────────────────────────────────────────┤
+│ FastAPI │ Authentication │ Prediction APIs │ Map APIs │ Analytics│
+└────────────────────────────┬─────────────────────────────────────┘
+                             │
+                             ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                    WEB APPLICATION                               │
+├──────────────────────────────────────────────────────────────────┤
+│ Dashboard │ India Map │ Day 1–10 │ Region Details │ Analytics    │
+│ Explainable AI │ Alerts │ Historical Performance                 │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+# 2. Recommended Technology Stack
+
+| Layer             | Technology                 | Purpose                         |
+| ----------------- | -------------------------- | ------------------------------- |
+| Frontend          | React.js / Next.js         | Web application                 |
+| UI                | Tailwind CSS               | Responsive interface            |
+| Map               | Leaflet + OpenStreetMap    | Interactive India map           |
+| Charts            | Plotly / Recharts          | Weather and ML analytics        |
+| Backend           | Python FastAPI             | REST APIs                       |
+| ML                | Python, Scikit-learn       | ML pipeline                     |
+| ML Model          | XGBoost                    | Bust probability prediction     |
+| Explainability    | SHAP                       | Feature contribution            |
+| Data Processing   | Pandas, NumPy, xarray      | Weather-data processing         |
+| Scientific Data   | NetCDF/xarray              | NWP/reanalysis data             |
+| Database          | PostgreSQL                 | Application and prediction data |
+| Geospatial DB     | PostGIS                    | Spatial/grid operations         |
+| Cache             | Redis                      | Fast API/cache operations       |
+| Background Jobs   | Celery / scheduled workers | Data processing                 |
+| Model Storage     | MLflow / object storage    | Model versions                  |
+| Containerization  | Docker                     | Deployment                      |
+| API Documentation | OpenAPI/Swagger            | API testing/documentation       |
+
+For the first prototype, you can simplify this to:
+
+**React + FastAPI + PostgreSQL + XGBoost + SHAP + Leaflet.**
+
+---
+
+# 3. High-Level Component Architecture
+
+```text
+                    ┌────────────────────┐
+                    │     NWP Sources    │
+                    └─────────┬──────────┘
+                              │
+                    ┌─────────▼──────────┐
+                    │   Data Ingestion   │
+                    └─────────┬──────────┘
+                              │
+                    ┌─────────▼──────────┐
+                    │ Data Quality Engine │
+                    └─────────┬──────────┘
+                              │
+               ┌──────────────▼──────────────┐
+               │    Weather Data Store       │
+               │ PostgreSQL + PostGIS/Files  │
+               └──────────────┬──────────────┘
+                              │
+                    ┌─────────▼──────────┐
+                    │ Feature Engineering│
+                    └─────────┬──────────┘
+                              │
+                ┌─────────────▼─────────────┐
+                │        ML Pipeline        │
+                │                            │
+                │ Error Model                │
+                │ Bust Model                 │
+                │ Calibration                │
+                └─────────────┬─────────────┘
+                              │
+                    ┌─────────▼──────────┐
+                    │ Reliability Engine  │
+                    └─────────┬──────────┘
+                              │
+                    ┌─────────▼──────────┐
+                    │      FastAPI        │
+                    └─────────┬──────────┘
+                              │
+              ┌───────────────▼────────────────┐
+              │          React Frontend         │
+              ├────────────────────────────────┤
+              │ Dashboard                       │
+              │ Confidence Map                  │
+              │ Forecast Details                │
+              │ AI Explanation                  │
+              │ Analytics                       │
+              └────────────────────────────────┘
+```
+
+---
+
+# 4. Data Architecture
+
+The system requires two fundamental types of information:
+
+### Forecast
+
+What the NWP model predicted.
+
+### Observation
+
+What actually happened.
+
+The core relationship is:
+
+```text
+NWP Forecast
+     +
+Actual Observation
+     ↓
+Forecast Error
+     ↓
+Bust Label
+     ↓
+ML Training Dataset
+```
+
+Example:
+
+```text
+Forecast:
+Rainfall = 120 mm
+
+Observed:
+Rainfall = 35 mm
+
+Absolute Error:
+85 mm
+
+Threshold:
+50 mm
+
+Bust:
+YES
+```
+
+---
+
+# 5. Data Sources
+
+The architecture should support multiple data sources.
+
+### Primary
+
+* NWP forecast data
+* Historical NWP forecast runs
+* Ground/weather observations
+
+### Optional
+
+* Reanalysis
+* Satellite observations
+* Radar products
+* Ensemble forecasts
+* Atmospheric indices
+
+The architecture should **not tightly couple the ML system to one specific provider**.
+
+Use a normalized internal data format so another source can be added later.
+
+---
+
+# 6. Data Ingestion Architecture
+
+```text
+NWP/API
+   │
+   ├───────────────┐
+   │               │
+CSV/NetCDF     Observation API
+   │               │
+   └───────┬───────┘
+           ▼
+     Ingestion Service
+           │
+           ▼
+       Validation
+           │
+       ┌───┴───┐
+       │       │
+     Valid   Invalid
+       │       │
+       ▼       ▼
+   Database   Error Log
+```
+
+The ingestion system should validate:
+
+* Latitude
+* Longitude
+* Timestamp
+* Forecast initialization time
+* Lead time
+* Variable name
+* Units
+* Missing values
+* Duplicate records
+* Invalid numerical values
+
+---
+
+# 7. Data Processing Pipeline
+
+Weather data often comes in different:
+
+* spatial resolutions
+* timestamps
+* units
+* coordinate systems
+* file formats
+
+Therefore:
+
+```text
+Raw Data
+   ↓
+Format Normalization
+   ↓
+Unit Normalization
+   ↓
+Time Alignment
+   ↓
+Spatial Alignment
+   ↓
+Missing Data Handling
+   ↓
+Forecast ↔ Observation Matching
+   ↓
+Clean Dataset
+```
+
+---
+
+# 8. Spatial Architecture
+
+India should be represented as a geographical grid.
+
+For example:
+
+```text
+             INDIA
+       ┌────┬────┬────┬────┐
+       │ G1 │ G2 │ G3 │ G4 │
+       ├────┼────┼────┼────┤
+       │ G5 │ G6 │ G7 │ G8 │
+       ├────┼────┼────┼────┤
+       │ G9 │G10 │G11 │G12 │
+       └────┴────┴────┴────┘
+```
+
+Each grid cell contains:
+
+```text
+grid_id
+latitude
+longitude
+forecast
+observation
+error
+bust_probability
+confidence
+risk
+```
+
+PostGIS can be used when advanced spatial queries are required.
+
+---
+
+# 9. Feature Engineering Architecture
+
+The feature-engineering service transforms raw weather information into ML features.
+
+### Forecast features
+
+```text
+rainfall_forecast
+temperature_forecast
+wind_speed
+pressure
+humidity
+geopotential_height
+```
+
+### Historical features
+
+```text
+historical_MAE
+historical_RMSE
+historical_bust_rate
+regional_error
+lead_time_error
+```
+
+### Forecast instability
+
+```text
+forecast_change
+forecast_run_difference
+rolling_forecast_variability
+```
+
+### Ensemble features
+
+```text
+ensemble_mean
+ensemble_std
+ensemble_range
+ensemble_spread
+```
+
+### Temporal features
+
+```text
+lead_day
+month
+season
+monsoon_phase
+```
+
+### Spatial features
+
+```text
+latitude
+longitude
+elevation
+region
+coastal_distance
+```
+
+---
+
+# 10. ML Architecture
+
+I recommend initially using two models.
+
+```text
+                  Feature Dataset
+                        │
+              ┌─────────┴─────────┐
+              │                   │
+              ▼                   ▼
+       Error Prediction       Bust Classification
+          Regression              Model
+              │                   │
+              ▼                   ▼
+       Expected Error        Bust Probability
+              │                   │
+              └─────────┬─────────┘
+                        ▼
+                 Calibration
+                        │
+                        ▼
+             Reliability Engine
+```
+
+### Model 1 — Error Prediction
+
+Output:
+
+```text
+Expected Error = 64.3 mm
+```
+
+### Model 2 — Bust Classification
+
+Output:
+
+```text
+Bust Probability = 0.72
+```
+
+---
+
+# 11. Model Selection
+
+### Initial implementation
+
+Use:
+
+**XGBoost**
+
+because it handles nonlinear relationships and tabular features effectively.
+
+Create baselines using:
+
+* Logistic Regression
+* Random Forest
+
+Then compare against XGBoost.
+
+The final model should be selected based on validation performance rather than assuming a particular algorithm is best.
+
+---
+
+# 12. Bust Detection Logic
+
+Conceptually:
+
+```text
+Forecast
+   │
+   ▼
+Expected Error
+   │
+   ▼
+Bust Threshold
+   │
+   ├── Below threshold → Normal
+   │
+   └── Above threshold → Bust
+```
+
+For example:
+
+$$
+Bust =
+\begin{cases}
+1 & Error > Threshold\\
+0 & Error \le Threshold
+\end{cases}
+$$
+
+The threshold should be determined from the selected weather variable, historical error distribution, and operational requirements.
+
+---
+
+# 13. Confidence Engine
+
+The ML model produces:
+
+```text
+P(Bust)
+```
+
+The reliability layer converts this into a user-facing indicator.
+
+For a simple initial implementation:
+
+$$
+Confidence = 1-P(Bust)
+$$
+
+Example:
+
+```text
+Bust Probability = 0.28
+
+Confidence = 0.72
+
+Confidence = 72%
+```
+
+The system should distinguish this **AI-derived reliability indicator** from the actual meteorological forecast.
+
+---
+
+# 14. Risk Engine
+
+Example configuration:
+
+```text
+0–20%     → Very Low
+20–40%    → Low
+40–60%    → Moderate
+60–80%    → High
+80–100%   → Very High
+```
+
+These are configurable application thresholds and should be validated against historical data.
+
+---
+
+# 15. Explainable AI Architecture
+
+```text
+                 ML Prediction
+                      │
+                      ▼
+                    SHAP
+                      │
+          ┌───────────┼───────────┐
+          ▼           ▼           ▼
+      Feature 1    Feature 2    Feature 3
+          │           │           │
+          └───────────┼───────────┘
+                      ▼
+             Explanation Engine
+                      │
+                      ▼
+             Human-readable output
+```
+
+Example:
+
+```text
+LOW CONFIDENCE
+
+Bust probability: 76%
+
+Major contributing factors:
+
+1. High ensemble spread
+2. Large forecast run-to-run change
+3. Elevated historical regional error
+4. Long forecast lead time
+```
+
+---
+
+# 16. Backend Architecture
+
+FastAPI can be divided into services/modules:
+
+```text
+backend/
+│
+├── api/
+│   ├── forecast.py
+│   ├── confidence.py
+│   ├── bust.py
+│   ├── map.py
+│   ├── analytics.py
+│   └── explanation.py
+│
+├── ml/
+│   ├── preprocessing.py
+│   ├── feature_engineering.py
+│   ├── predict.py
+│   ├── calibration.py
+│   └── explain.py
+│
+├── data/
+│   ├── ingestion.py
+│   ├── validation.py
+│   └── transformation.py
+│
+├── database/
+│   ├── models.py
+│   └── repository.py
+│
+├── services/
+│   ├── confidence_service.py
+│   ├── risk_service.py
+│   └── alert_service.py
+│
+└── main.py
+```
+
+---
+
+# 17. API Architecture
+
+### Forecast API
+
+```http
+GET /api/v1/forecast
+```
+
+### Confidence API
+
+```http
+GET /api/v1/confidence
+```
+
+Parameters:
+
+```text
+region
+date
+lead_day
+variable
+```
+
+### Bust Prediction API
+
+```http
+POST /api/v1/predict/bust
+```
+
+### Map API
+
+```http
+GET /api/v1/map/confidence?lead_day=5
+```
+
+### Explanation API
+
+```http
+GET /api/v1/explanation
+```
+
+### Analytics API
+
+```http
+GET /api/v1/analytics/error
+```
+
+---
+
+# 18. Example API Response
+
+```json
+{
+  "region": "Maharashtra",
+  "forecast_date": "2026-09-28",
+  "lead_day": 5,
+  "variable": "rainfall",
+  "forecast_value": 86.4,
+  "expected_error": 34.7,
+  "bust_probability": 0.42,
+  "confidence": 0.58,
+  "risk_level": "MODERATE",
+  "reasons": [
+    "High historical regional error",
+    "Forecast run changed significantly",
+    "High ensemble spread"
+  ]
+}
+```
+
+---
+
+# 19. Database Architecture
+
+### `regions`
+
+```text
+id
+name
+state
+latitude
+longitude
+geometry
+```
+
+### `forecast_data`
+
+```text
+id
+region_id
+forecast_time
+initialization_time
+lead_day
+variable
+forecast_value
+unit
+```
+
+### `observation_data`
+
+```text
+id
+region_id
+observation_time
+variable
+observed_value
+unit
+```
+
+### `forecast_errors`
+
+```text
+id
+forecast_id
+observation_id
+absolute_error
+percentage_error
+bust_label
+```
+
+### `predictions`
+
+```text
+id
+region_id
+forecast_date
+lead_day
+variable
+bust_probability
+confidence
+risk_level
+model_version
+```
+
+### `explanations`
+
+```text
+id
+prediction_id
+feature
+contribution
+description
+```
+
+### `model_versions`
+
+```text
+id
+model_name
+version
+training_date
+dataset_version
+metrics
+model_path
+```
+
+---
+
+# 20. Frontend Architecture
+
+```text
+React Application
+│
+├── Dashboard
+│
+├── ForecastMap
+│
+├── RegionDetails
+│
+├── ConfidenceChart
+│
+├── BustProbability
+│
+├── ExplanationPanel
+│
+├── HistoricalAnalytics
+│
+├── ModelPerformance
+│
+└── DataManagement
+```
+
+The frontend communicates only with the backend API.
+
+```text
+React
+  │
+  │ HTTPS/JSON
+  ▼
+FastAPI
+  │
+  ├── PostgreSQL
+  ├── ML Model
+  └── Weather Data
+```
+
+---
+
+# 21. Dashboard Architecture
+
+The main dashboard should contain:
+
+```text
+┌───────────────────────────────────────────────────────┐
+│ AI FORECAST BUST DETECTION                            │
+├───────────────────────────────────────────────────────┤
+│ Forecast Date │ Day 1 │ Day 2 │ ... │ Day 10         │
+├───────────────────────────────────────────────────────┤
+│                                                       │
+│                  INDIA MAP                            │
+│                                                       │
+│       Forecast Confidence / Bust Probability         │
+│                                                       │
+├──────────────────────────┬────────────────────────────┤
+│ Regional Risk             │ Forecast Statistics        │
+│                           │                            │
+│ High:     24 regions      │ Avg Confidence: 67%       │
+│ Moderate: 48 regions      │ High Risk: 17 regions     │
+│ Low:      93 regions      │                            │
+├──────────────────────────┴────────────────────────────┤
+│ AI EXPLANATION                                        │
+│                                                       │
+│ ⚠ High ensemble spread                                │
+│ ⚠ Forecast instability                               │
+│ ⚠ Historical error elevated                           │
+└───────────────────────────────────────────────────────┘
+```
+
+---
+
+# 22. End-to-End Prediction Flow
+
+When a new forecast arrives:
+
+```text
+1. NWP forecast arrives
+             ↓
+2. Data ingestion
+             ↓
+3. Validation
+             ↓
+4. Spatial/time alignment
+             ↓
+5. Feature generation
+             ↓
+6. ML model inference
+             ↓
+7. Bust probability
+             ↓
+8. Probability calibration
+             ↓
+9. Confidence calculation
+             ↓
+10. Risk classification
+             ↓
+11. SHAP explanation
+             ↓
+12. Store prediction
+             ↓
+13. API serves result
+             ↓
+14. Dashboard updates
+```
+
+---
+
+# 23. Model Training Pipeline
+
+Training should be separate from real-time inference.
+
+```text
+Historical Forecasts
+        +
+Historical Observations
+        ↓
+Error Calculation
+        ↓
+Feature Engineering
+        ↓
+Train / Validation / Test Split
+        ↓
+Model Training
+        ↓
+Model Evaluation
+        ↓
+Probability Calibration
+        ↓
+Explainability Validation
+        ↓
+Model Registry
+        ↓
+Production Model
+```
+
+**Important:** split data chronologically rather than randomly when evaluating forecasting performance, to reduce temporal leakage.
+
+---
+
+# 24. Model Evaluation
+
+The system should track:
+
+### Classification
+
+* Precision
+* Recall
+* F1-score
+* ROC-AUC
+* PR-AUC
+
+### Probability quality
+
+* Brier score
+* Calibration curve
+
+### Error prediction
+
+* MAE
+* RMSE
+
+### Operational performance
+
+* Region-wise performance
+* Day-wise performance
+* Weather-event performance
+
+The dashboard can include:
+
+```text
+MODEL PERFORMANCE
+
+F1 Score          0.78
+Recall            0.81
+Precision         0.75
+ROC-AUC           0.86
+Brier Score       0.14
+```
+
+These numbers should only be displayed after actually evaluating your trained model.
+
+---
+
+# 25. Deployment Architecture
+
+For a prototype:
+
+```text
+                  INTERNET
+                     │
+                     ▼
+             ┌──────────────┐
+             │ React / Next │
+             │   Frontend   │
+             └──────┬───────┘
+                    │ HTTPS
+                    ▼
+             ┌──────────────┐
+             │   FastAPI    │
+             │   Backend    │
+             └──────┬───────┘
+                    │
+          ┌─────────┼─────────┐
+          ▼         ▼         ▼
+     PostgreSQL    ML       Redis
+                   Model
+```
+
+Docker can package the services:
+
+```text
+docker-compose
+│
+├── frontend
+├── backend
+├── postgres
+└── redis
+```
+
+---
+
+# 26. Security Architecture
+
+Even though this is primarily a scientific application, basic security should be implemented.
+
+### API
+
+* HTTPS
+* Input validation
+* Rate limiting
+* Authentication for administrative APIs
+
+### Data
+
+* Database credentials in environment variables
+* No credentials inside source code
+* Restricted database access
+
+### Uploads
+
+* File-type validation
+* File-size limits
+* Schema validation
+* Malicious-file protection
+
+---
+
+# 27. Reliability and Failure Handling
+
+If live weather data is unavailable:
+
+```text
+Data unavailable
+      ↓
+Use last valid forecast
+      ↓
+Display timestamp
+      ↓
+Show "Data may be stale"
+```
+
+If ML model fails:
+
+```text
+Prediction unavailable
+      ↓
+Do NOT generate fake confidence
+      ↓
+Show system status
+```
+
+This is especially important for an operational-style application.
+
+---
+
+# 28. Recommended Project Folder Structure
+
+```text
+ai-forecast-bust/
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── maps/
+│   │   ├── charts/
+│   │   ├── services/
+│   │   └── App.jsx
+│   └── package.json
+│
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   ├── models/
+│   │   ├── services/
+│   │   ├── ml/
+│   │   ├── database/
+│   │   └── main.py
+│   ├── requirements.txt
+│   └── Dockerfile
+│
+├── ml/
+│   ├── data/
+│   ├── notebooks/
+│   ├── preprocessing/
+│   ├── features/
+│   ├── training/
+│   ├── evaluation/
+│   └── models/
+│
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   └── sample/
+│
+├── database/
+│   └── schema.sql
+│
+├── docker-compose.yml
+├── README.md
+└── .env.example
+```
+
+---
+
+# 29. MVP Architecture vs Full Architecture
+
+### MVP
+
+```text
+CSV Dataset
+    ↓
+Python preprocessing
+    ↓
+XGBoost
+    ↓
+FastAPI
+    ↓
+React
+    ↓
+Leaflet Map
+```
+
+### Full System
+
+```text
+NWP APIs/Files
+      ↓
+Data Ingestion
+      ↓
+Data Validation
+      ↓
+Weather Data Lake
+      ↓
+PostGIS
+      ↓
+Feature Engineering
+      ↓
+ML Pipeline
+      ↓
+XGBoost + Calibration + SHAP
+      ↓
+Reliability Engine
+      ↓
+FastAPI
+      ↓
+React + GIS Dashboard
+      ↓
+Alerts / Analytics / Reports
+```
+
+---
+
+# 30. Recommended Development Phases
+
+| Phase    | Deliverable                          |
+| -------- | ------------------------------------ |
+| Phase 1  | Dataset schema + sample weather data |
+| Phase 2  | Forecast-observation matching        |
+| Phase 3  | Forecast error calculation           |
+| Phase 4  | Bust-label generation                |
+| Phase 5  | ML baseline                          |
+| Phase 6  | XGBoost bust model                   |
+| Phase 7  | Probability calibration              |
+| Phase 8  | SHAP explanation                     |
+| Phase 9  | FastAPI backend                      |
+| Phase 10 | React dashboard                      |
+| Phase 11 | Interactive India map                |
+| Phase 12 | Day 1–10 visualization               |
+| Phase 13 | Historical analytics                 |
+| Phase 14 | Docker deployment                    |
+| Phase 15 | End-to-end testing                   |
+
+---
+
+## 31. Final Architecture Decision
+
+For your project, I recommend this as the **baseline technical architecture**:
+
+```text
+                    WEATHER DATA
+                         │
+                         ▼
+                 ┌───────────────┐
+                 │ Data Ingestion │
+                 └───────┬───────┘
+                         ▼
+                 ┌───────────────┐
+                 │ Data Quality  │
+                 └───────┬───────┘
+                         ▼
+                 ┌───────────────┐
+                 │ Feature       │
+                 │ Engineering   │
+                 └───────┬───────┘
+                         ▼
+                ┌──────────────────┐
+                │ XGBoost ML Model │
+                └────────┬─────────┘
+                         ▼
+             ┌────────────────────────┐
+             │ Bust Probability      │
+             │ + Expected Error      │
+             └───────────┬────────────┘
+                         ▼
+                ┌─────────────────┐
+                │ Calibration     │
+                └────────┬────────┘
+                         ▼
+             ┌────────────────────────┐
+             │ Reliability Engine     │
+             │ Confidence + Risk      │
+             └───────────┬────────────┘
+                         ▼
+                   ┌──────────┐
+                   │   SHAP   │
+                   │ Explain  │
+                   └────┬─────┘
+                        ▼
+                   ┌─────────┐
+                   │ FastAPI │
+                   └────┬────┘
+                        ▼
+             ┌─────────────────────┐
+             │ React + Leaflet     │
+             │ Operational Web App │
+             └─────────────────────┘
+```
+
+**The key architectural principle is:** the application should sit **on top of NWP**, not attempt to replace NWP. Its job is to estimate **where, when, and why the existing forecast may be unreliable**. This directly maps the architecture to the requirements of Problem Statement 26079.

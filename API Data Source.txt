@@ -1,0 +1,353 @@
+Yes. If your goal is a **hackathon prototype with zero paid APIs/data**, we can simplify the previous specification considerably.
+
+One important distinction: **“free to use” does not always mean “no registration” or “no restrictions.”** For example, MOSDAC has open data available anonymously, while some datasets require registration; its policy also distinguishes between open data and registered-user access. ([MosDAC][1])
+
+## Recommended 100% Free Stack
+
+| Component             | Recommended option                |                         Cost | Registration         |
+| --------------------- | --------------------------------- | ---------------------------: | -------------------- |
+| Historical weather    | **NOAA/NCEI Climate Data Online** |                         Free | Usually no           |
+| Reanalysis            | **Copernicus ERA5**               |                         Free | Yes                  |
+| Indian satellite data | **MOSDAC/ISRO**                   | Free for applicable datasets | Sometimes            |
+| NWP/forecast data     | **NOAA/NCEP/NOMADS**              |                         Free | No for many datasets |
+| Geographic boundaries | **Natural Earth / GADM**          |                         Free | No                   |
+| Backend               | **FastAPI + Python**              |             Free/open source | No                   |
+| ML                    | **Scikit-learn / XGBoost**        |             Free/open source | No                   |
+| Explainable AI        | **SHAP**                          |             Free/open source | No                   |
+| Database              | **PostgreSQL + PostGIS**          |             Free/open source | No                   |
+| Frontend              | **React + Vite**                  |             Free/open source | No                   |
+| Maps                  | **Leaflet + OpenStreetMap**       |                         Free | No                   |
+| Charts                | **Plotly / Recharts**             |             Free/open source | No                   |
+| Containerization      | **Docker**                        |       Free for this use case | No                   |
+| API testing           | **Postman Free / Bruno**          |                 Free options | Optional             |
+
+Copernicus explicitly provides its products under a free-of-charge, worldwide, royalty-free licence, subject to its attribution terms. ([Climate Data Store][2])
+
+NOAA/NCEI also provides free access to historical weather and climate data including temperature, precipitation and wind. ([NCEI][3])
+
+---
+
+# For Your PS, I Recommend This Data Setup
+
+Don't make your project dependent on 7 different APIs.
+
+Use **3 main data sources**:
+
+```text
+             ┌───────────────────────┐
+             │ NOAA/NCEP Forecast    │
+             │ NWP / Forecast Data   │
+             └───────────┬───────────┘
+                         │
+                         ▼
+             ┌───────────────────────┐
+             │ Historical Forecast   │
+             │ + Current Forecast    │
+             └───────────┬───────────┘
+                         │
+                         │
+             ┌───────────▼───────────┐
+             │ NOAA / ERA5 / MOSDAC  │
+             │ Observations / Actual │
+             │ Weather Conditions    │
+             └───────────┬───────────┘
+                         │
+                         ▼
+                ┌─────────────────┐
+                │ Error Generator │
+                └────────┬────────┘
+                         ▼
+                ┌─────────────────┐
+                │ ML Bust Model   │
+                └────────┬────────┘
+                         ▼
+            ┌──────────────────────────┐
+            │ Bust Probability         │
+            │ Forecast Confidence       │
+            │ Risk Level               │
+            │ Explanation              │
+            └────────────┬─────────────┘
+                         ▼
+                  Web Dashboard
+```
+
+### 1. NOAA/NCEP/NOMADS
+
+This is useful as a **free NWP/forecast source**. NOAA's READY documentation points to NCEP's NOMADS system for gridded forecast data. ([Ready.gov][4])
+
+Use it for:
+
+* temperature
+* precipitation
+* wind
+* pressure
+* humidity
+* geopotential variables
+* forecast lead times
+
+**Cost: ₹0**
+
+---
+
+### 2. NOAA/NCEI
+
+Use NOAA/NCEI for historical observations.
+
+It provides historical weather data including:
+
+* temperature
+* precipitation
+* wind
+* daily/monthly measurements
+
+and is available free of charge. ([NCEI][3])
+
+This gives you:
+
+```text
+Forecast
+   +
+Actual Observation
+   ↓
+Forecast Error
+```
+
+which is the most important thing your ML model needs.
+
+---
+
+### 3. ERA5
+
+Use **ERA5** as an optional additional source rather than making it mandatory.
+
+It can provide historical atmospheric variables such as:
+
+* temperature
+* pressure
+* humidity
+* wind
+* geopotential
+* atmospheric conditions
+
+Copernicus' current licence states that access is free of charge and permits use, modification and combination with other data, with attribution requirements. ([Climate Data Store][2])
+
+---
+
+# What About MOSDAC?
+
+**Yes, you can use MOSDAC**, especially because your problem is India-focused.
+
+MOSDAC provides meteorological/satellite datasets and has an API/download mechanism. Some open data can be accessed anonymously, while downloading other datasets requires a registered account. ([MosDAC][1])
+
+For example, MOSDAC lists rainfall products such as INSAT-3D rainfall data, with the dataset marked **“Not Priced Products.”** ([MosDAC][5])
+
+So:
+
+**Cost:** Free for applicable datasets
+**Account:** Depends on dataset
+**Important:** Follow the individual dataset's usage/attribution restrictions.
+
+---
+
+# Completely Free Software Architecture
+
+You can build the entire application without paying for software licenses:
+
+```text
+                 FRONTEND
+        ┌────────────────────────┐
+        │ React + Vite           │
+        │ Tailwind CSS           │
+        │ Leaflet                │
+        │ Plotly / Recharts      │
+        └───────────┬────────────┘
+                    │
+                    │ REST API
+                    ▼
+        ┌────────────────────────┐
+        │ FastAPI                │
+        │ Python                 │
+        └───────────┬────────────┘
+                    │
+        ┌───────────┼────────────┐
+        ▼           ▼            ▼
+   PostgreSQL     ML Model    Analytics
+   + PostGIS      XGBoost     SHAP
+        │           │            │
+        └───────────┼────────────┘
+                    │
+                    ▼
+              Data Pipeline
+                    │
+       ┌────────────┼─────────────┐
+       ▼            ▼             ▼
+     NOAA         ERA5         MOSDAC
+```
+
+---
+
+# Free API Endpoints for Your Own Application
+
+These are **your APIs**, so you don't need to pay someone for them.
+
+### Forecast
+
+```text
+GET /api/v1/forecast
+```
+
+### Confidence
+
+```text
+GET /api/v1/confidence
+```
+
+### 10-Day Confidence
+
+```text
+GET /api/v1/confidence/10day
+```
+
+### Bust Prediction
+
+```text
+POST /api/v1/predict/bust
+```
+
+### India Map
+
+```text
+GET /api/v1/map/confidence
+```
+
+### Explanation
+
+```text
+GET /api/v1/explanation
+```
+
+### Historical Error
+
+```text
+GET /api/v1/analytics/error
+```
+
+### Health Check
+
+```text
+GET /api/v1/health
+```
+
+All of these can run on your own FastAPI server.
+
+---
+
+# Free Dataset → ML Pipeline
+
+For the hackathon, I would make the pipeline:
+
+```text
+NOAA/NCEP Forecast
+       │
+       ▼
+Historical Forecast Dataset
+       │
+       ├───────────────┐
+       │               │
+       ▼               ▼
+Forecast Value     Lead Time
+       │
+       ▼
+NOAA Observation / ERA5
+       │
+       ▼
+Calculate Error
+       │
+       ▼
+Historical Error Features
+       │
+       ├── MAE
+       ├── RMSE
+       ├── Bias
+       ├── Bust Rate
+       ├── Run-to-Run Change
+       └── Seasonal Pattern
+       │
+       ▼
+      XGBoost
+       │
+       ├───────────────┐
+       ▼               ▼
+Bust Probability   Expected Error
+       │               │
+       └───────┬───────┘
+               ▼
+       Confidence Score
+               │
+               ▼
+          SHAP Reasons
+               │
+               ▼
+         India Map
+```
+
+## One important issue
+
+For **PS 26079**, the hardest part isn't creating the React website or FastAPI.
+
+It is obtaining a sufficiently good **historical NWP forecast + matching observation dataset**.
+
+You need:
+
+```text
+Forecast issued on Day 0
+        ↓
+Prediction for Day 1
+        ↓
+Actual Day 1 observation
+
+Prediction for Day 2
+        ↓
+Actual Day 2 observation
+
+...
+
+Prediction for Day 10
+        ↓
+Actual Day 10 observation
+```
+
+Without that pairing, you cannot properly train a **forecast bust detector**.
+
+So I would **not** spend your time buying any weather API.
+
+### Best zero-budget approach
+
+**Phase 1 — MVP**
+
+* NOAA/NCEP forecast data
+* NOAA/NCEI observations
+* ERA5 as supplementary data
+* Python
+* Pandas/xarray
+* XGBoost
+* SHAP
+* FastAPI
+* PostgreSQL/PostGIS
+* React
+* Leaflet
+* Plotly
+
+**Cost: ₹0 for the software/data stack**, subject to each dataset's access and usage terms.
+
+**Phase 2 — India-specific enhancement**
+
+Add MOSDAC/ISRO products where the required dataset is available under its free/open access terms. MOSDAC's policy confirms that open data are available to anonymous users, while broader access may require registration. ([MosDAC][1])
+
+If you want, I can next give you a **“Free Data Sources + Exact Dataset Names + Download/API method + Variables + Format + How to use each dataset for PS 26079”** table, which would be much more useful for actually starting the project.
+
+[1]: https://www.mosdac.gov.in/data-access-policy?utm_source=chatgpt.com "Data Access Policy | Meteorological & Oceanographic Satellite Data Archival Centre"
+[2]: https://cds.climate.copernicus.eu/licences/licence-to-use-copernicus-products?utm_source=chatgpt.com "Licence to use Copernicus Products (rev. 12)"
+[3]: https://www.ncei.noaa.gov/cdo-web/?utm_source=chatgpt.com "Climate Data Online (CDO) - The National Climatic Data Center's (NCDC) Climate Data Online (CDO) provides free access to NCDC's archive of historical weather and climate data in addition to station history information. | National Climatic Data Center (NCDC)"
+[4]: https://www.ready.noaa.gov/READYmetdata.php?utm_source=chatgpt.com "READY - Gridded Forecast Meteorological Data"
+[5]: https://mosdac.gov.in/doi/120/?utm_source=chatgpt.com "3DIMG_L2G_IMR"

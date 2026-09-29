@@ -1,0 +1,1367 @@
+# UI/UX Specification
+
+## AI-Based Forecast Bust Detection for Medium-Range Weather Forecasts
+
+### 1. UI/UX Objective
+
+The UI shall provide a **simple, operational web dashboard** that allows meteorologists, researchers, and administrators to quickly understand:
+
+* Where the NWP forecast may be unreliable
+* Which forecast lead day has higher bust probability
+* The confidence level for each region
+* Which weather variables are contributing to uncertainty
+* How current forecast behavior compares with historical errors
+* Why the AI has assigned a particular confidence level
+* Whether data/model quality is sufficient for the prediction
+
+The interface should prioritize **fast interpretation over visual complexity**.
+
+---
+
+# 2. Target Users
+
+| User            | Primary Need                               | Main Screens                            |
+| --------------- | ------------------------------------------ | --------------------------------------- |
+| Meteorologist   | Identify unreliable forecast regions       | Dashboard, Forecast Map, Region Details |
+| Weather Analyst | Investigate historical forecast errors     | Analytics                               |
+| Researcher      | Understand ML predictions and explanations | AI Bust Detection, Analytics            |
+| Operations User | Monitor current forecast reliability       | Dashboard, Alerts                       |
+| Administrator   | Monitor data/model health                  | System/Data Quality                     |
+
+---
+
+# 3. Design Principles
+
+### 3.1 Operational First
+
+The most important information should be visible immediately:
+
+> **Region → Lead Day → Bust Probability → Confidence → Reason**
+
+### 3.2 Map-Centric Visualization
+
+Because the problem is spatial, the India map should be the primary visualization.
+
+### 3.3 Explainable AI
+
+Every AI prediction should answer:
+
+> **“Why is confidence low?”**
+
+Example:
+
+> **Low confidence because:**
+> Historical rainfall error is high + current forecast changed significantly from previous run + ensemble spread is large.
+
+### 3.4 No False Precision
+
+The UI should avoid presenting AI output as an official forecast.
+
+Use:
+
+**“AI Bust Probability: 78%”**
+
+rather than:
+
+**“Forecast will be wrong: 78%.”**
+
+### 3.5 Progressive Disclosure
+
+Show a simple summary first, with detailed meteorological information available through drill-down.
+
+---
+
+# 4. Application Structure
+
+```text
+Web Application
+│
+├── Dashboard
+│
+├── Forecast Map
+│
+├── AI Bust Detection
+│
+├── Region Details
+│
+├── Analytics
+│
+├── Alerts
+│
+├── Data / Model Health
+│
+└── About / Methodology
+```
+
+---
+
+# 5. Global Layout
+
+```text
+┌───────────────────────────────────────────────────────────────┐
+│ LOGO   AI Forecast Reliability       Data: ● Current          │
+│                                       Model: ● Healthy         │
+├──────────────┬────────────────────────────────────────────────┤
+│              │                                                │
+│ Dashboard    │                                                │
+│ Forecast Map │                 MAIN CONTENT                   │
+│ AI Detection │                                                │
+│ Analytics    │                                                │
+│ Alerts       │                                                │
+│ System       │                                                │
+│              │                                                │
+│ Methodology  │                                                │
+├──────────────┴────────────────────────────────────────────────┤
+│ AI-derived reliability indicator • Not an official warning   │
+└───────────────────────────────────────────────────────────────┘
+```
+
+### Desktop
+
+Primary target:
+
+* 1280px+
+* 1440×900 recommended demonstration resolution
+
+### Tablet
+
+* Responsive layout
+* Map and charts stack vertically
+
+### Mobile
+
+Mobile is **not the primary operational interface**, but the dashboard should remain readable.
+
+---
+
+# 6. Navigation
+
+## Sidebar
+
+| Menu              | Icon     | Purpose                      |
+| ----------------- | -------- | ---------------------------- |
+| Dashboard         | Grid     | Overall forecast reliability |
+| Forecast Map      | Map      | Spatial confidence           |
+| AI Bust Detection | AI/Brain | Detailed predictions         |
+| Analytics         | Chart    | Historical errors            |
+| Alerts            | Bell     | Reliability alerts           |
+| System Health     | Activity | Data/model health            |
+| Methodology       | Info     | Explain system               |
+
+### Sidebar behavior
+
+Desktop:
+
+* Expanded by default
+
+Tablet:
+
+* Collapsible
+
+Mobile:
+
+* Bottom navigation or hamburger menu
+
+---
+
+# 7. Header
+
+The global header should contain:
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ ☁ AI Forecast Reliability                                    │
+│                                                              │
+│ Forecast Run: 28 Sep 2026 00 UTC     ● Data Current         │
+│                                      ● Model Healthy         │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Header elements
+
+1. Application name
+2. Forecast run timestamp
+3. Data freshness indicator
+4. ML model health indicator
+5. Refresh button
+6. User/menu control if authentication is implemented
+
+---
+
+# 8. Dashboard Screen
+
+The Dashboard is the primary landing page.
+
+## 8.1 Dashboard layout
+
+```text
+┌───────────────────────────────────────────────────────────────┐
+│ Dashboard                                                     │
+│ Forecast Run: 28 Sep 2026 00 UTC       [Refresh]             │
+├─────────────┬─────────────┬─────────────┬────────────────────┤
+│ Regions     │ High Risk   │ Avg Conf.   │ Data Quality       │
+│ 36          │ 7           │ 68%         │ 96%                │
+├─────────────┴─────────────┴─────────────┴────────────────────┤
+│                                                               │
+│                 INDIA CONFIDENCE MAP                          │
+│                                                               │
+│                    [Interactive Map]                           │
+│                                                               │
+├───────────────────────────────┬───────────────────────────────┤
+│ Day 1–10 Confidence           │ Active AI Alerts              │
+│                               │                               │
+│ D1 ████████ 91%               │ Maharashtra  High             │
+│ D2 ███████  84%               │ Assam          Moderate       │
+│ D3 ██████   77%               │ Rajasthan      High            │
+│ ...                           │                               │
+└───────────────────────────────┴───────────────────────────────┘
+```
+
+---
+
+# 9. Dashboard KPI Cards
+
+The first section should contain 4–5 KPI cards.
+
+### Card 1 — Regions Monitored
+
+```text
+36
+Regions Monitored
+```
+
+### Card 2 — High-Risk Regions
+
+```text
+7
+High Bust Probability
+```
+
+### Card 3 — Average Confidence
+
+```text
+68%
+AI Reliability Confidence
+```
+
+### Card 4 — Highest Risk Lead Day
+
+```text
+Day 6
+Highest Uncertainty
+```
+
+### Card 5 — Data Quality
+
+```text
+96%
+Data Quality
+```
+
+Clicking a KPI should navigate to the corresponding detailed screen.
+
+---
+
+# 10. Forecast Map
+
+The map is the most important UI component.
+
+## 10.1 Map requirements
+
+The map shall support:
+
+* India boundary
+* States/districts or predefined operational regions
+* Region markers/polygons
+* Confidence visualization
+* Bust probability visualization
+* Hover interaction
+* Click interaction
+* Zoom
+* Pan
+* Day selector
+* Variable selector
+
+Suggested implementation:
+
+* Leaflet
+* OpenStreetMap
+* GeoJSON region boundaries
+
+---
+
+# 11. Map Controls
+
+```text
+┌───────────────────────────────────────────────┐
+│ Forecast Variable: [Rainfall ▼]              │
+│ Lead Day: [D1] [D2] [D3] ... [D10]           │
+│ View: [Confidence ▼]                          │
+│                                               │
+│              INDIA MAP                        │
+│                                               │
+│ Legend                                        │
+│ Low Risk ─────────────── High Risk            │
+└───────────────────────────────────────────────┘
+```
+
+### Variable options
+
+* Rainfall
+* Temperature
+* Wind Speed
+* Pressure
+* Humidity
+* Overall Reliability
+
+---
+
+# 12. Map Interaction
+
+### Hover
+
+When hovering over a region:
+
+```text
+Maharashtra
+
+Lead Day: 5
+Variable: Rainfall
+
+Bust Probability: 78%
+Confidence: 22%
+Risk: HIGH
+```
+
+### Click
+
+Clicking a region opens a detail drawer:
+
+```text
+┌──────────────────────────────────┐
+│ Maharashtra                 ×    │
+├──────────────────────────────────┤
+│ Rainfall | Day 5                 │
+│                                  │
+│ Bust Probability       78%       │
+│ Confidence             22%       │
+│ Risk                   HIGH       │
+│                                  │
+│ Expected Error          42.7 mm   │
+│                                  │
+│ Why?                             │
+│ • High historical error          │
+│ • Large run-to-run change        │
+│ • High ensemble spread           │
+│                                  │
+│ [View Region Details]             │
+└──────────────────────────────────┘
+```
+
+---
+
+# 13. Day 1–Day 10 Selector
+
+The interface must make lead-time comparison extremely easy.
+
+```text
+DAY
+
+[1] [2] [3] [4] [5] [6] [7] [8] [9] [10]
+```
+
+Selected day should be visually prominent.
+
+Alternative:
+
+```text
+Forecast Horizon
+D1 ─── D2 ─── D3 ─── D4 ─── D5 ─── D6 ─── D7 ─── D8 ─── D9 ─── D10
+```
+
+The selected lead day updates:
+
+* Map
+* KPI values
+* Risk regions
+* Forecast details
+* Explanation
+* Charts
+
+---
+
+# 14. Risk Visualization
+
+Prototype risk levels:
+
+| Bust Probability | UI Label  |
+| ---------------: | --------- |
+|            0–20% | Very Low  |
+|           20–40% | Low       |
+|           40–60% | Moderate  |
+|           60–80% | High      |
+|          80–100% | Very High |
+
+These thresholds should be configurable.
+
+The UI should display the numerical probability alongside the label.
+
+Example:
+
+```text
+78%
+HIGH
+```
+
+not simply:
+
+```text
+HIGH
+```
+
+---
+
+# 15. AI Bust Detection Screen
+
+This screen provides detailed AI prediction information.
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ AI Bust Detection                                           │
+├─────────────────────────────────────────────────────────────┤
+│ Region: [Maharashtra ▼]                                     │
+│ Variable: [Rainfall ▼]                                      │
+│ Lead Day: [5 ▼]                                             │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│        BUST PROBABILITY                                    │
+│                                                             │
+│                    78%                                      │
+│                  HIGH                                       │
+│                                                             │
+│ Confidence: 22%                                             │
+│ Expected Error: 42.7 mm                                     │
+│                                                             │
+├────────────────────────────┬────────────────────────────────┤
+│ Main Contributing Factors  │ Historical Comparison          │
+│                            │                                │
+│ Historical MAE       +++   │ Current forecast               │
+│ Run change           ++    │ Historical error               │
+│ Ensemble spread      ++    │ Bust frequency                 │
+│ Humidity              +     │                                │
+└────────────────────────────┴────────────────────────────────┘
+```
+
+---
+
+# 16. Explainable AI Component
+
+The explanation component is essential.
+
+## 16.1 Feature contribution chart
+
+Example:
+
+```text
+Factors affecting reliability
+
+Historical MAE
+████████████████████  High impact
+
+Run-to-run change
+██████████████       Medium-high
+
+Ensemble spread
+████████████         Medium
+
+Humidity
+██████               Low-medium
+
+Pressure
+███                  Low
+```
+
+The actual visualization should be generated from SHAP values.
+
+---
+
+# 17. Human-Readable AI Explanation
+
+Example UI:
+
+> **Why is confidence low?**
+>
+> The rainfall forecast for Day 5 has elevated bust probability because historical rainfall errors for this region and lead time are high. The latest forecast also differs substantially from the previous forecast run, while ensemble members show relatively large disagreement.
+
+The explanation must be generated from actual model features.
+
+The UI should not invent meteorological causes.
+
+---
+
+# 18. Region Details Screen
+
+The Region Details page provides a complete historical and current view.
+
+```text
+Region Details
+────────────────────────────────────────
+
+Maharashtra
+
+Current Reliability
+Confidence: 22%
+Bust Probability: 78%
+
+Forecast
+────────────────
+Temperature     30.8 °C
+Rainfall        84.2 mm
+Wind            18.4 km/h
+Humidity        86.4%
+Pressure        1003.4 hPa
+
+Historical Error
+────────────────
+MAE             31.6 mm
+RMSE            42.1 mm
+Bust Rate       34%
+
+Forecast Stability
+────────────────
+Run-to-run change     38%
+Ensemble spread       18.4
+
+[View 10-Day Trend]
+```
+
+---
+
+# 19. 10-Day Confidence Chart
+
+The system should provide a line chart:
+
+```text
+Confidence
+100% ┤●
+ 90% ┤ ╲●
+ 80% ┤   ╲●
+ 70% ┤      ●
+ 60% ┤        ╲
+ 50% ┤          ●
+ 40% ┤            ╲●
+ 30% ┤
+ 20% ┤                 ●
+     └──────────────────────
+       D1 D2 D3 D4 D5 D6 D7 D8 D9 D10
+```
+
+Hovering over a point:
+
+```text
+Day 5
+
+Confidence: 22%
+Bust Probability: 78%
+Expected Error: 42.7 mm
+```
+
+---
+
+# 20. Forecast vs Observation Chart
+
+Historical validation should show:
+
+```text
+Rainfall (mm)
+
+100 ┤          ● Observation
+ 80 ┤       ●
+ 60 ┤    ●        ○ Forecast
+ 40 ┤ ○
+ 20 ┤
+  0 └────────────────────────
+       D1   D2   D3   D4   D5
+```
+
+This allows users to visually understand forecast error.
+
+---
+
+# 21. Analytics Screen
+
+The Analytics page focuses on historical model behavior.
+
+### Main components
+
+1. Historical MAE
+2. Historical RMSE
+3. Bias
+4. Bust rate
+5. Error by lead day
+6. Error by region
+7. Error by variable
+8. Seasonal patterns
+9. Weather-event patterns
+
+---
+
+# 22. Analytics Layout
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ Analytics                                                    │
+├──────────────────────────────────────────────────────────────┤
+│ Region [All ▼] Variable [Rainfall ▼] Season [All ▼]         │
+├────────────────────────────┬─────────────────────────────────┤
+│ MAE by Lead Day             │ Bust Rate by Lead Day           │
+│                            │                                 │
+│        Chart               │          Chart                  │
+├────────────────────────────┼─────────────────────────────────┤
+│ Regional Error Heatmap      │ Seasonal Error Trend            │
+│                            │                                 │
+│        Map                 │          Chart                  │
+└────────────────────────────┴─────────────────────────────────┘
+```
+
+---
+
+# 23. Alerts Screen
+
+The Alerts page should show only **AI reliability alerts**, clearly distinguished from official meteorological warnings.
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ AI Reliability Alerts                                       │
+├──────────────────────────────────────────────────────────────┤
+│ Filters: [Risk ▼] [Region ▼] [Variable ▼] [Status ▼]        │
+├───────┬────────────┬──────────┬─────────┬───────────────────┤
+│ Risk  │ Region     │ Lead Day │ Prob.   │ Status            │
+├───────┼────────────┼──────────┼─────────┼───────────────────┤
+│ High  │ Maharashtra│ D5       │ 78%     │ Active            │
+│ High  │ Assam      │ D6       │ 74%     │ Active            │
+│ Mod.  │ Rajasthan  │ D4       │ 56%     │ Active            │
+└───────┴────────────┴──────────┴─────────┴───────────────────┘
+```
+
+---
+
+# 24. Alert Detail
+
+Clicking an alert:
+
+```text
+AI RELIABILITY ALERT
+
+Maharashtra
+Rainfall — Day 5
+
+Bust Probability
+78%
+
+Confidence
+22%
+
+Reason
+
+1. High historical rainfall error
+2. Large forecast run-to-run change
+3. High ensemble spread
+
+Forecast Run
+28 Sep 2026 00 UTC
+
+Model
+XGB v1.3
+
+Status
+ACTIVE
+```
+
+Include:
+
+> **This is an AI-derived forecast reliability indicator and is not an official weather warning.**
+
+---
+
+# 25. System Health Screen
+
+This screen is important for operational trust.
+
+### Data status
+
+```text
+Data Sources
+
+NWP Forecast       ● Healthy
+Observations        ● Healthy
+ERA5                ● Healthy
+Geographic Data     ● Healthy
+```
+
+### ML status
+
+```text
+ML System
+
+Model               XGB v1.3
+Status              ● Healthy
+Last Training       20 Sep 2026
+ROC-AUC             0.84
+Brier Score         0.16
+Calibration         Good
+```
+
+### Pipeline status
+
+```text
+Ingestion           ●
+Validation          ●
+Feature Engineering ●
+Prediction          ●
+Database            ●
+API                 ●
+```
+
+---
+
+# 26. Data Quality UI
+
+When data quality is degraded, the dashboard should explicitly communicate it.
+
+Example:
+
+```text
+⚠ DATA QUALITY ISSUE
+
+Observation data for 28 Sep 2026 is incomplete.
+
+Affected:
+• 4 regions
+• Rainfall variable
+• Day 5–Day 7
+
+AI predictions may be unavailable or less reliable.
+```
+
+The system must never silently display a normal confidence score when required data is missing.
+
+---
+
+# 27. Methodology Page
+
+The methodology page explains the system to users.
+
+Recommended structure:
+
+```text
+How It Works
+
+1. NWP Forecast
+       ↓
+2. Historical Forecast Errors
+       ↓
+3. Current Atmospheric Conditions
+       ↓
+4. Feature Engineering
+       ↓
+5. ML Bust Detection
+       ↓
+6. Probability Calibration
+       ↓
+7. Explainable AI
+       ↓
+8. Confidence & Risk
+```
+
+---
+
+# 28. Methodology Content
+
+### NWP Forecast
+
+Current medium-range numerical weather prediction data.
+
+### Historical Error
+
+Past forecast versus observation differences.
+
+### AI Model
+
+Machine-learning models identify patterns associated with larger forecast errors.
+
+### Bust Probability
+
+Probability that the current forecast exceeds the configured significant-error threshold.
+
+### Confidence
+
+Prototype reliability indicator derived from calibrated bust probability.
+
+```text
+Confidence = 1 − Bust Probability
+```
+
+### Explainability
+
+SHAP-based feature contribution identifies the strongest factors influencing the prediction.
+
+---
+
+# 29. Color & Visual Language
+
+The interface should use a restrained operational visual language.
+
+### Risk colors
+
+| Risk             | Suggested visual |
+| ---------------- | ---------------- |
+| Very Low         | Green            |
+| Low              | Light green      |
+| Moderate         | Amber            |
+| High             | Orange           |
+| Very High        | Red              |
+| Data unavailable | Gray             |
+
+Do not rely on color alone.
+
+Every risk state should also contain:
+
+* Text label
+* Numerical probability
+* Optional icon/pattern
+
+Example:
+
+```text
+● HIGH
+78%
+```
+
+This improves accessibility.
+
+---
+
+# 30. Typography
+
+Recommended:
+
+* **Inter**
+* Roboto
+* System sans-serif fallback
+
+Hierarchy:
+
+| Element         | Suggested Size |
+| --------------- | -------------: |
+| Page title      |       24–28 px |
+| Section title   |       18–20 px |
+| Card heading    |       14–16 px |
+| KPI value       |       26–36 px |
+| Body            |       14–16 px |
+| Supporting text |       12–14 px |
+
+---
+
+# 31. Cards
+
+Cards should contain a clear hierarchy:
+
+```text
+┌────────────────────────┐
+│ BUST PROBABILITY       │
+│                        │
+│ 78%                    │
+│ HIGH                   │
+│                        │
+│ Day 5 · Rainfall       │
+└────────────────────────┘
+```
+
+Avoid overly dense cards.
+
+---
+
+# 32. Loading States
+
+The application should not display blank screens.
+
+Use:
+
+```text
+Loading confidence map...
+```
+
+or skeleton components.
+
+For example:
+
+```text
+┌─────────────────────┐
+│ ███████████         │
+│ ███████             │
+│ █████████████       │
+└─────────────────────┘
+```
+
+---
+
+# 33. Error States
+
+Example:
+
+```text
+Unable to load confidence data
+
+The latest forecast reliability data could not be retrieved.
+
+[Retry]
+```
+
+For ML failure:
+
+```text
+AI confidence unavailable
+
+The reliability model is temporarily unavailable.
+The underlying NWP forecast remains available.
+```
+
+---
+
+# 34. Empty States
+
+Example:
+
+```text
+No active AI reliability alerts
+
+No regions currently meet the configured alert threshold.
+```
+
+Avoid showing misleading zero values when data simply does not exist.
+
+---
+
+# 35. Responsive Design
+
+### Desktop
+
+```text
+Sidebar | Map + Analytics
+```
+
+### Tablet
+
+```text
+Header
+────────────
+Map
+────────────
+KPIs
+────────────
+Charts
+```
+
+### Mobile
+
+```text
+Header
+────────────
+Risk Summary
+────────────
+Map
+────────────
+10-Day Confidence
+────────────
+Alerts
+```
+
+The India map remains usable but may switch to a simplified visualization.
+
+---
+
+# 36. Accessibility
+
+The UI should target WCAG 2.1 AA-level practices.
+
+Requirements:
+
+* Keyboard navigation
+* Visible focus indicators
+* Sufficient text contrast
+* Color-independent risk indication
+* Accessible chart labels
+* Tooltips with text alternatives
+* Screen-reader-friendly controls
+* Minimum practical touch target size
+* No critical information communicated through color alone
+
+---
+
+# 37. UX Flow
+
+## Primary operational flow
+
+```text
+Open Dashboard
+      ↓
+Select Forecast Day
+      ↓
+View India Confidence Map
+      ↓
+Identify High-Risk Region
+      ↓
+Click Region
+      ↓
+View Bust Probability
+      ↓
+View Explanation
+      ↓
+Inspect Historical Error
+      ↓
+Review Alert / Take Analytical Action
+```
+
+---
+
+# 38. Detailed User Journey
+
+### Step 1
+
+User opens dashboard.
+
+### Step 2
+
+System displays the latest available forecast run.
+
+### Step 3
+
+User selects:
+
+```text
+Variable = Rainfall
+Lead Day = Day 5
+```
+
+### Step 4
+
+Map updates to Day 5 rainfall reliability.
+
+### Step 5
+
+User notices a high-risk region.
+
+### Step 6
+
+User clicks the region.
+
+### Step 7
+
+System displays:
+
+* Forecast
+* Bust probability
+* Confidence
+* Historical error
+* Forecast instability
+* Ensemble spread
+* Explanation
+
+### Step 8
+
+User opens Region Details.
+
+### Step 9
+
+User compares Day 1–Day 10 confidence.
+
+### Step 10
+
+User checks historical analytics.
+
+---
+
+# 39. Frontend Component Architecture
+
+Suggested React structure:
+
+```text
+src/
+├── components/
+│   ├── layout/
+│   │   ├── Header
+│   │   ├── Sidebar
+│   │   └── Footer
+│   │
+│   ├── dashboard/
+│   │   ├── KPICard
+│   │   ├── RiskSummary
+│   │   └── AlertSummary
+│   │
+│   ├── map/
+│   │   ├── IndiaMap
+│   │   ├── MapLegend
+│   │   ├── MapTooltip
+│   │   └── RegionDrawer
+│   │
+│   ├── confidence/
+│   │   ├── ConfidenceCard
+│   │   ├── ConfidenceTrend
+│   │   └── RiskBadge
+│   │
+│   ├── ai/
+│   │   ├── BustProbability
+│   │   ├── FeatureImportance
+│   │   └── AIExplanation
+│   │
+│   ├── analytics/
+│   │   ├── ErrorChart
+│   │   ├── BustRateChart
+│   │   └── HistoricalHeatmap
+│   │
+│   └── alerts/
+│       ├── AlertTable
+│       └── AlertDetail
+│
+├── pages/
+│   ├── Dashboard
+│   ├── ForecastMap
+│   ├── BustDetection
+│   ├── RegionDetails
+│   ├── Analytics
+│   ├── Alerts
+│   ├── SystemHealth
+│   └── Methodology
+│
+├── services/
+│   ├── forecastApi
+│   ├── confidenceApi
+│   ├── predictionApi
+│   └── analyticsApi
+│
+└── App.jsx
+```
+
+---
+
+# 40. Main UI State Model
+
+The frontend should maintain:
+
+```text
+selectedRegion
+selectedVariable
+selectedLeadDay
+selectedForecastRun
+confidenceData
+forecastData
+predictionData
+explanationData
+alerts
+dataQuality
+modelStatus
+loading
+error
+```
+
+Example:
+
+```javascript
+{
+  selectedRegion: "MH_MUM",
+  selectedVariable: "rainfall",
+  selectedLeadDay: 5,
+  selectedForecastRun: "2026-09-28T00:00:00Z"
+}
+```
+
+---
+
+# 41. API → UI Mapping
+
+| UI Component     | API                            |
+| ---------------- | ------------------------------ |
+| Dashboard KPIs   | `/confidence`                  |
+| India Map        | `/map/confidence`              |
+| Forecast details | `/forecast`                    |
+| 10-day chart     | `/confidence/10day`            |
+| Bust probability | `/predict/bust`                |
+| AI explanation   | `/explanation/{prediction_id}` |
+| Error analytics  | `/analytics/error`             |
+| Trends           | `/analytics/trends`            |
+| Alerts           | `/alerts`                      |
+| System health    | `/health`                      |
+| Data quality     | `/data-quality`                |
+| Model status     | `/models`                      |
+
+---
+
+# 42. Prototype Data Flow
+
+```text
+              BACKEND
+                 │
+                 ▼
+        GET /confidence/10day
+                 │
+                 ▼
+          React State Store
+                 │
+       ┌─────────┼─────────┐
+       ▼         ▼         ▼
+   KPI Cards    Chart     Map
+       │         │         │
+       └─────────┼─────────┘
+                 ▼
+          User selects region
+                 │
+                 ▼
+       GET /explanation/{id}
+                 │
+                 ▼
+          AI Explanation UI
+```
+
+---
+
+# 43. Recommended Technology
+
+| Layer          | Technology             |
+| -------------- | ---------------------- |
+| Frontend       | React + Vite           |
+| Styling        | Tailwind CSS           |
+| Map            | Leaflet                |
+| Map data       | GeoJSON                |
+| Charts         | Recharts / Plotly      |
+| Icons          | Lucide                 |
+| State          | React Context/Zustand  |
+| API client     | Fetch/Axios            |
+| Backend        | FastAPI                |
+| Database       | PostgreSQL + PostGIS   |
+| ML             | XGBoost + Scikit-learn |
+| Explainability | SHAP                   |
+| Deployment     | Docker                 |
+
+All of these can be implemented using free/open-source software.
+
+---
+
+# 44. MVP UI Scope
+
+For the hackathon, the minimum polished interface should contain:
+
+### Screen 1 — Dashboard
+
+* KPI cards
+* India map
+* Day 1–10 selector
+* Risk summary
+* Active alerts
+
+### Screen 2 — Region Details
+
+* Bust probability
+* Confidence
+* Forecast values
+* Historical error
+* 10-day confidence chart
+* AI explanation
+
+### Screen 3 — Analytics
+
+* MAE/RMSE
+* Bust rate
+* Lead-time error chart
+* Regional error visualization
+
+### Screen 4 — System Health
+
+* Data source status
+* Model status
+* Data quality
+
+### Screen 5 — Methodology
+
+* Architecture
+* AI methodology
+* Disclaimer
+
+This is sufficient to demonstrate the complete PS workflow without spending excessive hackathon time on secondary features.
+
+---
+
+# 45. Primary Demo Scenario
+
+The final hackathon demonstration should follow this sequence:
+
+```text
+1. Open Dashboard
+        ↓
+2. Show current forecast run
+        ↓
+3. Select Rainfall
+        ↓
+4. Select Day 5
+        ↓
+5. India map shows confidence
+        ↓
+6. Select a high-risk region
+        ↓
+7. Show 78% bust probability
+        ↓
+8. Show 22% confidence
+        ↓
+9. Show historical error comparison
+        ↓
+10. Show SHAP-based reasons
+        ↓
+11. Show 10-day confidence trend
+        ↓
+12. Show corresponding AI alert
+        ↓
+13. Open methodology/disclaimer
+```
+
+This creates a clear story:
+
+**Forecast → Detect uncertainty → Locate risk → Explain risk → Visualize confidence.**
+
+---
+
+# 46. Key UX Acceptance Criteria
+
+| ID    | Requirement                                                              |
+| ----- | ------------------------------------------------------------------------ |
+| UX-01 | User can reach the main confidence map from the dashboard                |
+| UX-02 | User can select Day 1–Day 10                                             |
+| UX-03 | User can select weather variable                                         |
+| UX-04 | Map displays region-wise confidence                                      |
+| UX-05 | Map displays bust probability                                            |
+| UX-06 | User can click a region                                                  |
+| UX-07 | Region details show forecast information                                 |
+| UX-08 | Region details show historical error                                     |
+| UX-09 | AI explanation is visible for predictions                                |
+| UX-10 | 10-day confidence trend is available                                     |
+| UX-11 | Alerts are clearly separated from official warnings                      |
+| UX-12 | Data-quality problems are visibly communicated                           |
+| UX-13 | ML/model status is visible                                               |
+| UX-14 | Loading and error states are handled                                     |
+| UX-15 | Interface works on desktop/tablet                                        |
+| UX-16 | Critical information is not conveyed by color alone                      |
+| UX-17 | AI output identifies the relevant forecast run/model version             |
+| UX-18 | Disclaimer is always accessible                                          |
+| UX-19 | No fabricated values are shown when required data is unavailable         |
+| UX-20 | Core dashboard can be understood without reading technical documentation |
+
+---
+
+## Final UI/UX Principle
+
+The dashboard should feel less like a generic weather website and more like an **operational forecast-reliability workstation**:
+
+> **“Show me where the forecast may fail, how likely that is, how confident the system is, and why.”**
+
+The central user experience should therefore remain:
+
+**India Map → Day/Variable → Bust Probability → Confidence → Explanation → Historical Evidence.**

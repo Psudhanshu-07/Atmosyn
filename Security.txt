@@ -1,0 +1,1211 @@
+# Security Document
+
+## AI-Based Forecast Bust Detection Website
+
+### 1. Purpose
+
+This document defines the security requirements for the web-based **AI-Based Forecast Bust Detection System**.
+
+The security design protects:
+
+* Weather and forecast datasets
+* Historical observations
+* ML models
+* Prediction results
+* API endpoints
+* Database
+* Uploaded files
+* User sessions
+* System infrastructure
+* Audit information
+
+The system is primarily an **operational decision-support application**, so security must also protect the integrity and traceability of forecast reliability information.
+
+---
+
+# 2. Security Objectives
+
+The system shall follow the core security objectives:
+
+| Objective        | Description                                                                    |
+| ---------------- | ------------------------------------------------------------------------------ |
+| Confidentiality  | Prevent unauthorized access to protected data                                  |
+| Integrity        | Prevent unauthorized modification of forecasts, predictions, and configuration |
+| Availability     | Keep the dashboard/API operational                                             |
+| Authentication   | Verify authorized users                                                        |
+| Authorization    | Restrict actions according to user role                                        |
+| Data Protection  | Protect uploaded and stored datasets                                           |
+| Model Protection | Prevent unauthorized model modification/replacement                            |
+| Auditability     | Record important system actions                                                |
+| Traceability     | Link predictions to data source, forecast run, and model version               |
+| Safe Failure     | Prevent invalid or incomplete data from producing misleading outputs           |
+
+---
+
+# 3. Security Architecture
+
+```text id="v8c1r2"
+                         Internet
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │ HTTPS / TLS   │
+                    └───────┬───────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │ Reverse Proxy │
+                    │    Nginx      │
+                    └───────┬───────┘
+                            │
+                  ┌─────────┴─────────┐
+                  ▼                   ▼
+          ┌──────────────┐     ┌──────────────┐
+          │ React        │     │ FastAPI      │
+          │ Frontend     │     │ Backend API  │
+          └──────────────┘     └──────┬───────┘
+                                      │
+                     ┌────────────────┼────────────────┐
+                     ▼                ▼                ▼
+               PostgreSQL          ML Model         Redis
+                + PostGIS          Service         (optional)
+                     │
+                     ▼
+              Protected Storage
+```
+
+---
+
+# 4. Security Threat Model
+
+The system should consider the following threats.
+
+| Threat                   | Potential Impact               | Protection                       |
+| ------------------------ | ------------------------------ | -------------------------------- |
+| Unauthorized API access  | Data exposure                  | Authentication + authorization   |
+| SQL injection            | Database compromise            | Parameterized queries/ORM        |
+| XSS                      | User/session compromise        | Output escaping + CSP            |
+| CSRF                     | Unauthorized actions           | CSRF protection where applicable |
+| Malicious file upload    | Server compromise              | File validation/sandboxing       |
+| API abuse                | Service degradation            | Rate limiting                    |
+| Credential theft         | Account compromise             | Secure password/token handling   |
+| Model replacement        | Incorrect predictions          | Model integrity checks           |
+| Data tampering           | Incorrect reliability output   | Validation + audit logs          |
+| Stale data               | Misleading output              | Freshness validation             |
+| Database exposure        | Data theft                     | Network isolation + credentials  |
+| Secrets in Git           | Credential compromise          | Environment secrets              |
+| Dependency vulnerability | Application compromise         | Dependency scanning              |
+| DDoS                     | Availability loss              | Rate limiting/reverse proxy      |
+| Privilege escalation     | Unauthorized actions           | RBAC                             |
+| Log leakage              | Sensitive information exposure | Sanitized logging                |
+
+---
+
+# 5. Authentication
+
+If authentication is enabled, users must authenticate before accessing protected functions.
+
+Recommended architecture:
+
+```text id="3d8b8k"
+User
+ ↓
+Login
+ ↓
+Authentication
+ ↓
+Access Token
+ ↓
+FastAPI
+ ↓
+Authorization Check
+ ↓
+Resource
+```
+
+Recommended technologies:
+
+* OAuth2/JWT
+* FastAPI security utilities
+* HTTPS
+
+---
+
+# 6. Authentication Requirements
+
+The system shall:
+
+1. Never store plain-text passwords.
+2. Hash passwords using a strong password hashing algorithm.
+3. Expire authentication tokens.
+4. Reject invalid or expired tokens.
+5. Avoid exposing authentication credentials in URLs.
+6. Never store tokens in application logs.
+7. Provide logout/token invalidation where required.
+8. Apply rate limiting to login endpoints.
+
+---
+
+# 7. Role-Based Access Control
+
+Recommended roles:
+
+| Role       | Permissions                                    |
+| ---------- | ---------------------------------------------- |
+| Viewer     | View forecasts, maps, confidence and analytics |
+| Analyst    | Viewer + advanced analytics                    |
+| Researcher | Analyst + model/prediction investigation       |
+| Operator   | Viewer + alerts/operational functions          |
+| Admin      | User, data, model and system management        |
+
+Example:
+
+```text id="l0b6z8"
+Viewer
+ └── Read-only
+
+Analyst
+ └── Viewer
+     └── Analytics
+
+Operator
+ └── Viewer
+     └── Alert Management
+
+Admin
+ └── Full System Management
+```
+
+The MVP may use a single read-only role if authentication is not required for the hackathon demonstration.
+
+---
+
+# 8. Authorization
+
+Every protected backend operation must verify authorization.
+
+For example:
+
+```text id="w9xy7q"
+GET /forecast
+       ↓
+Authenticated?
+       ↓
+Authorized?
+       ↓
+Return forecast
+```
+
+Administrative endpoints should never be accessible to normal viewers.
+
+Examples:
+
+```text
+POST /data/upload
+POST /models
+POST /alerts/{id}/acknowledge
+```
+
+should require elevated permissions.
+
+---
+
+# 9. API Security
+
+All public API endpoints should be protected against malformed or abusive requests.
+
+### Requirements
+
+* Request validation
+* Response validation
+* Rate limiting
+* Authentication where required
+* Authorization
+* Request size limits
+* Timeout limits
+* Standardized errors
+* Secure HTTP headers
+
+---
+
+# 10. Input Validation
+
+FastAPI/Pydantic shall validate API input.
+
+Example:
+
+```json id="g5e7ny"
+{
+  "lead_day": 5,
+  "variable": "rainfall"
+}
+```
+
+Validation:
+
+```text id="2g8d3s"
+lead_day
+→ integer
+→ minimum = 1
+→ maximum = 10
+
+variable
+→ allowed enum values
+```
+
+Invalid input should return:
+
+```json id="z3xj6b"
+{
+  "error": {
+    "code": "INVALID_PARAMETER",
+    "message": "lead_day must be between 1 and 10"
+  }
+}
+```
+
+---
+
+# 11. SQL Injection Protection
+
+The backend must never construct SQL queries by directly concatenating user input.
+
+Use:
+
+* SQLAlchemy
+* Parameterized queries
+* Validated input
+
+Avoid:
+
+```text
+SELECT * FROM regions WHERE name = '<user_input>'
+```
+
+Prefer parameterized database operations through SQLAlchemy.
+
+---
+
+# 12. Cross-Site Scripting (XSS)
+
+The frontend must protect against malicious content being rendered in the browser.
+
+Requirements:
+
+* Escape dynamic content
+* Avoid unsafe HTML rendering
+* Sanitize user-provided text
+* Use Content Security Policy where practical
+* Avoid `dangerouslySetInnerHTML` unless content is explicitly sanitized
+
+Particular attention should be given to:
+
+* Alert messages
+* Uploaded metadata
+* Region names
+* Dataset names
+* User-generated descriptions
+
+---
+
+# 13. Cross-Site Request Forgery
+
+For cookie-based authentication, CSRF protection shall be enabled for state-changing requests.
+
+Protected operations include:
+
+```text
+POST
+PUT
+PATCH
+DELETE
+```
+
+If the application uses bearer tokens in an architecture that does not rely on cookies, CSRF exposure is reduced, but authentication and authorization must still be enforced.
+
+---
+
+# 14. CORS
+
+FastAPI CORS configuration must use an explicit allowlist in production.
+
+Development:
+
+```text id="v5m8sj"
+http://localhost:5173
+```
+
+Production:
+
+```text id="y0q9cd"
+https://forecast.example-domain
+```
+
+Avoid:
+
+```text id="p6k1yd"
+allow_origins=["*"]
+```
+
+for authenticated production APIs.
+
+---
+
+# 15. HTTPS / TLS
+
+All production communication must use HTTPS.
+
+```text id="p0q7t2"
+Browser
+   │
+ HTTPS
+   ▼
+Nginx
+   │
+ HTTPS / internal network
+   ▼
+FastAPI
+```
+
+HTTPS protects:
+
+* Credentials
+* Authentication tokens
+* API requests
+* Prediction information
+* Uploaded data
+
+HTTP should redirect to HTTPS where applicable.
+
+---
+
+# 16. Security Headers
+
+The reverse proxy/application should provide appropriate security headers.
+
+Recommended:
+
+```text id="1k3h5d"
+Strict-Transport-Security
+Content-Security-Policy
+X-Content-Type-Options
+X-Frame-Options
+Referrer-Policy
+Permissions-Policy
+```
+
+Headers should be configured according to the deployment environment and tested before production use.
+
+---
+
+# 17. File Upload Security
+
+The system may accept:
+
+* CSV
+* JSON
+* NetCDF
+* GRIB
+
+File uploads are a significant security risk.
+
+### Required protections
+
+1. Maximum file size
+2. Allowed extensions
+3. MIME/type validation
+4. File-content validation
+5. Filename sanitization
+6. Random server-side filenames
+7. Storage outside executable directories
+8. Malware scanning where practical
+9. Processing isolation
+10. Automatic cleanup of temporary files
+
+---
+
+# 18. File Upload Workflow
+
+```text id="7l5x6e"
+Upload File
+     ↓
+Authentication
+     ↓
+File Size Check
+     ↓
+Extension Check
+     ↓
+Content Validation
+     ↓
+Schema Validation
+     ↓
+Meteorological Validation
+     ↓
+Safe Processing
+     ↓
+Database
+```
+
+A file should not be processed simply because it has a `.csv`, `.nc`, or `.grib` extension.
+
+---
+
+# 19. Data Validation Security
+
+Security is not limited to malicious attackers.
+
+Incorrect weather data can also compromise the integrity of the system.
+
+The system shall validate:
+
+* Timestamp
+* Coordinates
+* Units
+* Variable names
+* Missing values
+* Duplicate records
+* Physical ranges
+* Lead day
+* Forecast run
+* Observation time
+* Region ID
+
+Example:
+
+```text id="n8t4tq"
+Rainfall = -5000 mm
+        ↓
+Validation Failure
+        ↓
+Record rejected / flagged
+```
+
+---
+
+# 20. Forecast Integrity
+
+Every prediction should retain traceability information.
+
+Minimum metadata:
+
+```text id="r2p7tq"
+prediction_id
+forecast_run
+valid_time
+region_id
+variable
+lead_day
+forecast_source
+observation_source
+model_version
+prediction_time
+```
+
+This prevents users from seeing an unexplained prediction with no source context.
+
+---
+
+# 21. ML Model Security
+
+ML models should be treated as protected application assets.
+
+### Requirements
+
+* Store models in controlled storage
+* Version every model
+* Record training period
+* Record feature set
+* Record evaluation metrics
+* Record model checksum/hash
+* Restrict model replacement
+* Log model deployment
+* Never load arbitrary uploaded model files
+
+---
+
+# 22. Model Versioning
+
+Example:
+
+```text id="2h5m7j"
+XGB-Rainfall-Bust-v1.0
+XGB-Rainfall-Bust-v1.1
+XGB-Rainfall-Bust-v1.2
+```
+
+Each version should contain:
+
+```text
+model_version
+algorithm
+training_period
+features
+metrics
+model_path
+checksum
+created_at
+status
+```
+
+---
+
+# 23. Model Integrity
+
+Before loading a production model:
+
+```text id="f8u2mz"
+Model File
+    ↓
+Checksum Verification
+    ↓
+Expected Hash?
+   / \
+ Yes  No
+ ↓     ↓
+Load   Reject
+```
+
+This reduces the risk of unauthorized model replacement.
+
+---
+
+# 24. Database Security
+
+PostgreSQL should not be directly exposed to the public Internet.
+
+Recommended:
+
+```text id="r9x3y1"
+Internet
+   ↓
+Nginx
+   ↓
+FastAPI
+   ↓
+PostgreSQL
+```
+
+Not:
+
+```text id="e7f0v5"
+Internet
+   ↓
+PostgreSQL
+```
+
+---
+
+# 25. Database Access Control
+
+Use separate database credentials according to environment.
+
+### Development
+
+```text
+forecast_dev
+```
+
+### Production
+
+```text
+forecast_prod
+```
+
+The application database user should receive only the permissions it needs.
+
+Avoid running the application using a PostgreSQL superuser.
+
+---
+
+# 26. Database Encryption
+
+Where supported by the deployment environment:
+
+* Encrypt database storage
+* Encrypt backups
+* Encrypt connections
+* Protect database credentials
+
+Sensitive credentials should be stored in environment/secret management systems rather than source code.
+
+---
+
+# 27. Secrets Management
+
+Never commit:
+
+```text
+passwords
+API keys
+JWT secrets
+database credentials
+private keys
+cloud credentials
+```
+
+to Git.
+
+Use:
+
+```text id="b5q3j9"
+.env
+```
+
+for local development and an appropriate secrets manager/environment configuration for production.
+
+Example:
+
+```text id="v2x7u4"
+DATABASE_URL=...
+JWT_SECRET=...
+MODEL_PATH=...
+```
+
+`.env` should be included in `.gitignore`.
+
+---
+
+# 28. Logging
+
+The system shall maintain security and operational logs.
+
+Log:
+
+* Authentication events
+* Authorization failures
+* API requests
+* File uploads
+* Model changes
+* Data ingestion
+* Prediction generation
+* Administrative actions
+* System errors
+
+Do not log:
+
+* Passwords
+* Authentication tokens
+* Secret keys
+* Sensitive credentials
+
+---
+
+# 29. Audit Logging
+
+Important operations should be recorded in `api_audit_logs`.
+
+Example:
+
+```text id="x4k9m2"
+Timestamp
+User / Role
+Endpoint
+HTTP Method
+Request ID
+Response Code
+Response Time
+Action
+Status
+```
+
+For administrative operations, also record:
+
+```text
+resource
+old_value
+new_value
+```
+
+where appropriate.
+
+---
+
+# 30. Prediction Auditability
+
+Each AI prediction should be traceable.
+
+```text id="n4j8x3"
+Prediction
+    │
+    ├── Forecast Run
+    ├── Region
+    ├── Variable
+    ├── Lead Day
+    ├── Input Features
+    ├── Model Version
+    ├── Bust Probability
+    ├── Confidence
+    └── Explanation
+```
+
+This is important for debugging and scientific reproducibility.
+
+---
+
+# 31. Rate Limiting
+
+Rate limiting should protect API endpoints from abuse.
+
+Recommended categories:
+
+| Endpoint        | Protection  |
+| --------------- | ----------- |
+| `/health`       | Lightweight |
+| `/forecast`     | Standard    |
+| `/confidence`   | Standard    |
+| `/predict/bust` | Strict      |
+| `/data/upload`  | Strict      |
+| `/login`        | Very strict |
+| `/models`       | Admin only  |
+
+The exact limits should be configured according to deployment capacity.
+
+---
+
+# 32. API Request Limits
+
+The backend should enforce:
+
+* Maximum request body size
+* Maximum upload size
+* Query parameter limits
+* Maximum date range
+* Maximum number of requested regions
+* Maximum batch prediction size
+
+This prevents expensive requests from exhausting resources.
+
+---
+
+# 33. Denial-of-Service Protection
+
+Basic protections:
+
+```text
+Nginx
+  ↓
+Rate Limiting
+  ↓
+FastAPI
+  ↓
+Request Validation
+```
+
+Additional production protections may include infrastructure-level DDoS protection.
+
+For the hackathon, Nginx + rate limiting + request limits are sufficient.
+
+---
+
+# 34. Error Handling
+
+Errors should not expose internal information.
+
+Avoid returning:
+
+```text
+database password
+file system path
+stack trace
+SQL query
+internal server configuration
+```
+
+to users.
+
+Instead:
+
+```json id="a4j6ny"
+{
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "The requested operation could not be completed."
+  }
+}
+```
+
+Detailed information should remain in secure server logs.
+
+---
+
+# 35. Security of AI Explanations
+
+The AI explanation layer must not be allowed to fabricate system state.
+
+The explanation should be generated only from structured model outputs such as:
+
+```text id="1o4t6n"
+bust_probability
+expected_error
+feature_values
+shap_values
+historical_error
+run_to_run_change
+ensemble_spread
+```
+
+The explanation must not invent:
+
+* Weather observations
+* Forecast values
+* Model features
+* Official warnings
+* Meteorological events
+
+---
+
+# 36. Official Warning Separation
+
+If official weather warnings are integrated in the future, they must remain separate from AI reliability alerts.
+
+```text id="q3r8k1"
+┌───────────────────────────┐
+│ AI RELIABILITY ALERT      │
+│ Bust probability: 78%     │
+└───────────────────────────┘
+
+                ≠
+
+┌───────────────────────────┐
+│ OFFICIAL WEATHER WARNING  │
+│ Issued by authorized      │
+│ meteorological agency     │
+└───────────────────────────┘
+```
+
+The website must never imply that an AI reliability alert is an official warning.
+
+---
+
+# 37. Data Privacy
+
+The core weather datasets are generally not personal data, but the application may contain user information if authentication is added.
+
+If user accounts are implemented:
+
+* Collect minimum required information
+* Avoid unnecessary personal data
+* Protect account information
+* Define retention policies
+* Do not expose user information through APIs
+* Restrict administrative access
+
+---
+
+# 38. Frontend Security
+
+The frontend shall:
+
+* Use HTTPS
+* Avoid storing secrets
+* Validate API responses
+* Handle authentication securely
+* Avoid unsafe HTML
+* Avoid exposing internal API credentials
+* Implement safe error messages
+* Restrict external script sources where practical
+
+The frontend should never contain:
+
+```text
+DATABASE_PASSWORD
+JWT_SECRET
+PRIVATE_API_KEY
+MODEL_STORAGE_CREDENTIALS
+```
+
+---
+
+# 39. Dependency Security
+
+All frontend and backend dependencies should be regularly checked for known vulnerabilities.
+
+Recommended:
+
+```text
+npm audit
+pip-audit
+Dependabot / equivalent
+```
+
+Dependencies should be:
+
+* Pinned
+* Updated regularly
+* Removed when unused
+* Reviewed before major version upgrades
+
+---
+
+# 40. Container Security
+
+Docker containers should:
+
+* Use minimal base images
+* Avoid running as root where practical
+* Avoid unnecessary packages
+* Expose only required ports
+* Keep secrets outside images
+* Use fixed dependency versions
+* Be rebuilt when security updates are required
+
+Example architecture:
+
+```text id="3e0b9k"
+Internet
+   │
+   ▼
+Nginx :443
+   │
+   ├── Frontend
+   │
+   └── Backend :8000
+                │
+                └── PostgreSQL :5432
+```
+
+Port `5432` should not be publicly exposed.
+
+---
+
+# 41. Network Security
+
+Recommended network segmentation:
+
+```text id="m5s8d2"
+Public Network
+      │
+      ▼
+Reverse Proxy
+      │
+      ▼
+Application Network
+   ┌──┴─────┐
+   ▼        ▼
+FastAPI   Frontend
+   │
+   ▼
+Database Network
+   │
+   ▼
+PostgreSQL
+```
+
+Only required connections should be allowed.
+
+---
+
+# 42. Backup & Recovery
+
+The system should maintain backups of:
+
+* PostgreSQL database
+* Forecast metadata
+* Historical error data
+* ML models
+* Configuration
+* Important GeoJSON datasets
+
+Backup policy should include:
+
+```text id="w7m3q1"
+Backup
+  ↓
+Verify
+  ↓
+Store securely
+  ↓
+Periodic restore test
+```
+
+A backup that has never been restored/tested should not be considered fully reliable.
+
+---
+
+# 43. Availability
+
+The application should gracefully handle:
+
+* NWP source unavailable
+* Observation source unavailable
+* Database unavailable
+* ML model unavailable
+* Redis unavailable
+* Network timeout
+* Invalid dataset
+* Stale forecast
+
+Example:
+
+```text id="k8q4r1"
+ML Model Unavailable
+
+AI confidence is currently unavailable.
+
+The underlying forecast data remains available.
+```
+
+---
+
+# 44. Fail-Safe Behavior
+
+The system must fail safely.
+
+### If forecast data is unavailable:
+
+```text
+AI confidence unavailable
+```
+
+### If observations are unavailable:
+
+```text
+Historical validation unavailable
+```
+
+### If model is unavailable:
+
+```text
+AI prediction unavailable
+```
+
+### If data is stale:
+
+```text
+Forecast data is outdated
+```
+
+The system must **not fabricate replacement values**.
+
+---
+
+# 45. Security Monitoring
+
+Monitor:
+
+* Failed logins
+* Excessive API requests
+* Upload failures
+* Unauthorized access attempts
+* Database errors
+* Model modification
+* Unexpected prediction changes
+* Data ingestion failures
+* Dependency vulnerabilities
+* Server resource usage
+
+---
+
+# 46. Security Testing
+
+Before deployment, perform:
+
+### Functional security tests
+
+* Invalid login
+* Expired token
+* Unauthorized endpoint
+* Invalid role
+* Invalid API parameters
+
+### Application security tests
+
+* SQL injection
+* XSS
+* CSRF
+* File upload abuse
+* Path traversal
+* Authentication bypass
+* Rate-limit testing
+
+### Infrastructure tests
+
+* Open ports
+* Database exposure
+* Container permissions
+* HTTPS configuration
+* Secret leakage
+
+---
+
+# 47. Security Checklist
+
+| ID     | Security Requirement                      | Status |
+| ------ | ----------------------------------------- | ------ |
+| SEC-01 | HTTPS enabled                             | ☐      |
+| SEC-02 | Authentication implemented where required | ☐      |
+| SEC-03 | RBAC implemented                          | ☐      |
+| SEC-04 | API input validation                      | ☐      |
+| SEC-05 | SQL injection protection                  | ☐      |
+| SEC-06 | XSS protection                            | ☐      |
+| SEC-07 | CORS restricted                           | ☐      |
+| SEC-08 | Rate limiting                             | ☐      |
+| SEC-09 | File upload validation                    | ☐      |
+| SEC-10 | Database not publicly exposed             | ☐      |
+| SEC-11 | Secrets excluded from Git                 | ☐      |
+| SEC-12 | Audit logging                             | ☐      |
+| SEC-13 | Model versioning                          | ☐      |
+| SEC-14 | Model integrity verification              | ☐      |
+| SEC-15 | Dependency vulnerability checks           | ☐      |
+| SEC-16 | Secure error handling                     | ☐      |
+| SEC-17 | Backup strategy                           | ☐      |
+| SEC-18 | Data-quality validation                   | ☐      |
+| SEC-19 | Safe failure behavior                     | ☐      |
+| SEC-20 | Security testing completed                | ☐      |
+
+---
+
+# 48. Hackathon MVP Security
+
+For the hackathon, prioritize these controls:
+
+```text id="8u7r2n"
+1. HTTPS / secure deployment
+2. FastAPI input validation
+3. SQLAlchemy parameterized queries
+4. Restricted CORS
+5. File upload validation
+6. No secrets in Git
+7. Database not exposed publicly
+8. Basic rate limiting
+9. Secure error responses
+10. Model/version traceability
+11. Data-quality validation
+12. Safe failure behavior
+```
+
+Advanced enterprise controls can be added after the prototype.
+
+---
+
+# 49. Security Acceptance Criteria
+
+The website will be considered security-ready for the prototype when:
+
+1. Unauthorized users cannot access protected operations.
+2. API inputs are validated.
+3. Database queries are parameterized.
+4. Uploaded files are validated before processing.
+5. Secrets are not present in source control.
+6. PostgreSQL is not publicly accessible.
+7. CORS is restricted.
+8. API abuse is rate-limited.
+9. Errors do not expose internal implementation details.
+10. AI predictions contain model and forecast traceability.
+11. Model files cannot be replaced without authorization.
+12. Data-quality failures prevent misleading predictions.
+13. Security-relevant actions are logged.
+14. The application can safely handle unavailable data/services.
+15. AI reliability indicators remain clearly separated from official weather warnings.
+
+---
+
+## 50. Security Principle
+
+The core security philosophy for the website is:
+
+> **Protect the data, protect the prediction pipeline, protect the API, and never allow incomplete or tampered information to appear as trustworthy forecast reliability information.**
+
+The security architecture therefore follows:
+
+**Secure Access → Validate Data → Protect API → Protect Database → Protect ML Models → Audit Predictions → Fail Safely.**

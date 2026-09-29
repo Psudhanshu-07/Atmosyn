@@ -1,0 +1,9 @@
+[project]
+name = "forecast-bust-backend"
+version = "1.0.0"
+description = "AI-Based Forecast Bust Detection and Confidence Mapping - backend API"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

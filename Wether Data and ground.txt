@@ -1,0 +1,386 @@
+## Weather Data & Grounding Specification
+
+For **PS 26079 – AI-Based Forecast Bust Detection**, the Weather Data & Grounding layer should ensure that every AI prediction is based on **real, time-aligned meteorological data** rather than unsupported assumptions.
+
+| Component               | Specification                                            | Recommended Source / Technology             | Cost |
+| ----------------------- | -------------------------------------------------------- | ------------------------------------------- | ---: |
+| **NWP Forecast Data**   | Forecast variables for Day 1–Day 10                      | NOAA/NCEP/NOMADS or available NCMRWF data   | Free |
+| **Historical NWP Data** | Previous forecast runs for training                      | NOAA/NCEP archives / available NWP archives | Free |
+| **Observed Weather**    | Actual temperature, rainfall, wind, pressure etc.        | NOAA/NCEI, IMD/MOSDAC where available       | Free |
+| **Reanalysis**          | Historical atmospheric state and supplementary variables | Copernicus ERA5                             | Free |
+| **Satellite Data**      | Cloud/rainfall/weather-system information                | MOSDAC/ISRO where applicable                | Free |
+| **Geospatial Data**     | India boundaries, states, districts/grid                 | Natural Earth / GADM / OpenStreetMap        | Free |
+| **Weather Events**      | Cyclones, heavy rainfall, heat waves, etc.               | Official meteorological datasets            | Free |
+| **Data Format**         | Gridded meteorological data                              | NetCDF / GRIB                               | Free |
+| **Processing**          | Cleaning, interpolation, alignment and feature creation  | Python + Pandas + xarray + NumPy            | Free |
+| **Storage**             | Forecast, observations and model outputs                 | PostgreSQL + PostGIS                        | Free |
+| **Grounding Layer**     | Connect every prediction to source weather data          | Python/FastAPI                              | Free |
+| **Data Validation**     | Time, location, unit, missing-value and range checks     | Python                                      | Free |
+
+### 1. Grounding Architecture
+
+```text
+          OFFICIAL / OPEN WEATHER DATA
+                       │
+       ┌───────────────┼────────────────┐
+       ▼               ▼                ▼
+   NWP Forecast     Observations      ERA5
+       │               │                │
+       └───────────────┼────────────────┘
+                       ▼
+              DATA VALIDATION
+                       │
+              ┌────────┴────────┐
+              ▼                 ▼
+         Time Matching     Spatial Matching
+              │                 │
+              └────────┬────────┘
+                       ▼
+             FORECAST–OBSERVATION
+                    PAIRING
+                       │
+                       ▼
+                ERROR ENGINE
+                       │
+        ┌──────────────┼──────────────┐
+        ▼              ▼              ▼
+     MAE/RMSE       Bias         Bust Labels
+        │              │              │
+        └──────────────┼──────────────┘
+                       ▼
+                 ML FEATURES
+                       │
+                       ▼
+                 AI MODEL
+                       │
+              ┌────────┴────────┐
+              ▼                 ▼
+       Bust Probability    Expected Error
+              │                 │
+              └────────┬────────┘
+                       ▼
+              CONFIDENCE SCORE
+                       │
+                       ▼
+             EXPLAINABLE OUTPUT
+                       │
+                       ▼
+                DASHBOARD/API
+```
+
+## 2. Required Weather Variables
+
+For the MVP, don't try to use every possible meteorological variable.
+
+### Core variables
+
+| Variable                        | Use                                                 |
+| ------------------------------- | --------------------------------------------------- |
+| Temperature                     | Forecast error prediction                           |
+| Rainfall / precipitation        | Heavy-rainfall bust detection                       |
+| Wind speed                      | Wind forecast reliability                           |
+| Wind direction                  | Weather-system movement                             |
+| Relative humidity               | Atmospheric condition                               |
+| Surface pressure                | Synoptic-system identification                      |
+| Geopotential height             | Large-scale atmospheric pattern                     |
+| Cloud/precipitation information | Optional satellite feature                          |
+| CAPE                            | Convective instability, if available                |
+| Vertical wind shear             | Severe-weather/convective uncertainty, if available |
+
+---
+
+# 3. Forecast–Observation Grounding
+
+This is the **most important part** of the system.
+
+For every forecast:
+
+```text
+Forecast Run
+     +
+Location
+     +
+Valid Time
+     +
+Variable
+          ↓
+Find corresponding observation
+          ↓
+Calculate error
+```
+
+Example:
+
+```text
+Forecast issued:
+28 Sep 2026
+
+Forecast:
+30 Sep 2026
+Mumbai
+Rainfall = 42 mm
+
+Actual observation:
+30 Sep 2026
+Mumbai
+Rainfall = 61 mm
+
+Error = |42 - 61|
+      = 19 mm
+```
+
+The system stores:
+
+```json
+{
+  "forecast_run": "2026-09-28T00:00:00Z",
+  "valid_time": "2026-09-30T00:00:00Z",
+  "region": "MH_MUM",
+  "variable": "rainfall",
+  "forecast": 42.0,
+  "observed": 61.0,
+  "absolute_error": 19.0
+}
+```
+
+This historical error becomes the **ground truth for the bust-detection model**.
+
+---
+
+# 4. Spatial Grounding
+
+Weather data may come in different spatial resolutions.
+
+Therefore, the system should standardize everything onto a common grid.
+
+```text
+NWP Grid
+    ↓
+Common India Grid
+    ↓
+State / District / Region
+    ↓
+Dashboard Map
+```
+
+Recommended MVP:
+
+**0.25° × 0.25° grid**
+
+or whatever resolution is consistently available in your selected datasets.
+
+Each grid cell should have:
+
+```text
+grid_id
+latitude
+longitude
+state
+district
+elevation
+```
+
+---
+
+# 5. Temporal Grounding
+
+All datasets should use a standardized time system.
+
+Recommended:
+
+```text
+UTC internally
+```
+
+Convert to:
+
+```text
+IST
+```
+
+only for the dashboard.
+
+Each forecast record should contain:
+
+```text
+forecast_run_time
+valid_time
+lead_time
+lead_day
+```
+
+Example:
+
+```text
+Forecast run: 28 Sep 00 UTC
+Valid time:   30 Sep 00 UTC
+Lead time:    48 hours
+Lead day:     Day 2
+```
+
+This prevents one of the biggest possible errors in the project: **comparing a forecast with the wrong observation time**.
+
+---
+
+# 6. Data Quality & Validation
+
+Before weather data enters the ML pipeline:
+
+| Check                    | Example                            |
+| ------------------------ | ---------------------------------- |
+| Missing values           | Reject/flag excessive missing data |
+| Duplicate records        | Same grid + time + variable        |
+| Time consistency         | Forecast run < valid time          |
+| Lead time                | Day 1–Day 10                       |
+| Latitude                 | Valid geographic range             |
+| Longitude                | Valid geographic range             |
+| Units                    | mm, °C, m/s, hPa                   |
+| Physical range           | Detect impossible values           |
+| Spatial resolution       | Confirm expected grid              |
+| Observation availability | Ensure matching observation exists |
+
+### Example
+
+```text
+Incoming Data
+      ↓
+Schema Check
+      ↓
+Time Check
+      ↓
+Coordinate Check
+      ↓
+Unit Check
+      ↓
+Missing Data Check
+      ↓
+Duplicate Check
+      ↓
+Quality Score
+      ↓
+Approved Dataset
+```
+
+---
+
+# 7. Weather Data Grounding for AI
+
+The AI model should **never generate its own weather facts**.
+
+Instead:
+
+```text
+Actual Weather Data
+       ↓
+Feature Extraction
+       ↓
+ML Prediction
+       ↓
+Prediction + Source Data
+       ↓
+Explanation
+```
+
+For example:
+
+```json
+{
+  "region": "MH_MUM",
+  "lead_day": 5,
+  "forecast_rainfall": 84.2,
+  "historical_rainfall_mae": 31.6,
+  "ensemble_spread": 18.4,
+  "run_to_run_change": 0.38,
+  "bust_probability": 0.78
+}
+```
+
+The explanation layer can then say:
+
+> Forecast confidence is low because the current rainfall prediction shows high ensemble disagreement, substantial run-to-run variation, and historically elevated rainfall error at this lead time.
+
+The explanation is grounded in **actual model features**, rather than an LLM inventing meteorological reasons.
+
+---
+
+# 8. Source Traceability
+
+Every prediction should be traceable to its input data.
+
+Store:
+
+```text
+prediction_id
+forecast_run
+valid_time
+region_id
+lead_day
+variable
+data_source
+model_version
+prediction_time
+```
+
+Example:
+
+```json
+{
+  "prediction_id": "PRED-00125",
+  "region_id": "MH_MUM",
+  "lead_day": 5,
+  "variable": "rainfall",
+  "forecast_source": "NCEP",
+  "observation_source": "NCEI",
+  "model_version": "xgb_v1.3",
+  "bust_probability": 0.78
+}
+```
+
+This is important for demonstrating **AI accountability and reproducibility** during the hackathon.
+
+---
+
+# 9. Grounding + Explainability
+
+The final dashboard should show something like:
+
+```text
+┌─────────────────────────────────────────────┐
+│ Mumbai – Day 5                              │
+├─────────────────────────────────────────────┤
+│ Bust Probability       78%                  │
+│ Forecast Confidence    22%                  │
+│ Risk                   HIGH                  │
+│                                             │
+│ Main contributing factors:                  │
+│                                             │
+│ ● High ensemble spread                      │
+│ ● Large run-to-run forecast change          │
+│ ● Historically high rainfall error          │
+│ ● Longer forecast lead time                  │
+│                                             │
+│ Forecast rainfall: 84 mm                    │
+│ Historical MAE:     32 mm                   │
+└─────────────────────────────────────────────┘
+```
+
+That directly satisfies the PS requirement for **explainable output with key meteorological reasons for low confidence**.
+
+## Recommended final data stack
+
+For your **free hackathon implementation**, I'd use:
+
+**NWP:** NOAA/NCEP/NOMADS
+**Observations:** NOAA/NCEI + Indian sources where available
+**Reanalysis:** ERA5
+**Satellite:** MOSDAC where useful
+**Processing:** Python + xarray + Pandas
+**Storage:** PostgreSQL/PostGIS
+**ML:** XGBoost
+**Explainability:** SHAP
+**API:** FastAPI
+**Frontend:** React + Leaflet
+
+The key principle is:
+
+> **Every bust probability must be traceable to a specific forecast run, location, valid time, weather variable, historical error pattern, and model version.**

@@ -1,0 +1,652 @@
+# User Journey / Workflow Document
+
+## 1. Purpose
+
+This document defines how users interact with the **AI-Based Forecast Bust Detection System** from opening the application through identifying, investigating, and interpreting forecast uncertainty.
+
+The workflow is designed around the core operational question:
+
+> **Where is the medium-range forecast likely to be unreliable, when is the risk highest, and why?**
+
+---
+
+# 2. Primary User Journey
+
+```text
+Open Application
+       ↓
+Dashboard
+       ↓
+Select Forecast Run
+       ↓
+Select Weather Variable
+       ↓
+Select Lead Day (D1–D10)
+       ↓
+View India Confidence Map
+       ↓
+Identify High-Risk Region
+       ↓
+Open Region Details
+       ↓
+Review Bust Probability
+       ↓
+Review Confidence Score
+       ↓
+Review Historical Error
+       ↓
+Review AI Explanation
+       ↓
+Compare 10-Day Reliability
+       ↓
+Review Alerts
+       ↓
+Take Analytical / Operational Action
+```
+
+---
+
+# 3. User Roles
+
+| Role            | Main Objective              | Typical Workflow                             |
+| --------------- | --------------------------- | -------------------------------------------- |
+| Meteorologist   | Assess forecast reliability | Dashboard → Map → Region → Explanation       |
+| Weather Analyst | Study error patterns        | Analytics → Region → Historical Error        |
+| Researcher      | Evaluate AI behavior        | Bust Detection → Explanation → Model Metrics |
+| Operations User | Monitor high-risk forecasts | Dashboard → Alerts → Region                  |
+| Administrator   | Monitor system health       | System Health → Data Quality → Model Status  |
+
+---
+
+# 4. Journey 1 — Daily Forecast Reliability Monitoring
+
+### Goal
+
+Quickly determine whether the current medium-range forecast contains regions or lead times with elevated uncertainty.
+
+### Workflow
+
+```text
+Login / Open Dashboard
+        ↓
+Check Forecast Run
+        ↓
+Check Data Status
+        ↓
+Review Overall Confidence
+        ↓
+Select Day
+        ↓
+Inspect India Map
+        ↓
+Identify High-Risk Areas
+        ↓
+Open Region
+        ↓
+Review Explanation
+```
+
+### Step-by-step
+
+| Step | User Action        | System Response                   |
+| ---- | ------------------ | --------------------------------- |
+| 1    | Open dashboard     | Latest forecast run displayed     |
+| 2    | Check data status  | Current/stale/error status shown  |
+| 3    | Select variable    | Map updates                       |
+| 4    | Select Day 1–10    | Reliability values update         |
+| 5    | Inspect map        | Region-wise confidence displayed  |
+| 6    | Select region      | Region drawer opens               |
+| 7    | Review probability | Bust probability displayed        |
+| 8    | Review reasons     | AI explanation displayed          |
+| 9    | Review history     | Historical error comparison shown |
+
+---
+
+# 5. Journey 2 — Identify a Forecast Bust
+
+### Goal
+
+Find a region where the current NWP forecast has a high probability of significant error.
+
+```text
+Dashboard
+   ↓
+Forecast Map
+   ↓
+Day 5
+   ↓
+Rainfall
+   ↓
+High-risk region
+   ↓
+Region Details
+   ↓
+Bust Probability
+```
+
+### Example
+
+User selects:
+
+```text
+Variable: Rainfall
+Lead Day: Day 5
+```
+
+The map identifies a region with:
+
+```text
+Bust Probability: 78%
+Confidence: 22%
+Risk: HIGH
+```
+
+The user then opens the region for investigation.
+
+---
+
+# 6. Journey 3 — Understand Why Confidence Is Low
+
+### Goal
+
+Provide an interpretable reason for the AI prediction.
+
+```text
+Region Selected
+       ↓
+AI Prediction
+       ↓
+Feature Contributions
+       ↓
+SHAP Explanation
+       ↓
+Human-readable Explanation
+```
+
+### Example
+
+The interface shows:
+
+**Bust Probability:** 78%
+
+**Main contributing factors:**
+
+1. High historical rainfall error
+2. Large run-to-run forecast change
+3. High ensemble spread
+4. Elevated atmospheric variability
+
+Then:
+
+> **Interpretation:** The system estimates elevated forecast uncertainty because this region has historically experienced larger rainfall errors at this lead time, while the latest forecast has changed substantially and ensemble members show greater disagreement.
+
+---
+
+# 7. Journey 4 — Compare Forecast Reliability Across 10 Days
+
+### Goal
+
+Understand how forecast reliability changes with lead time.
+
+```text
+Select Region
+      ↓
+Open 10-Day Confidence
+      ↓
+View D1–D10 Chart
+      ↓
+Identify Confidence Decline
+      ↓
+Select Specific Day
+      ↓
+View Detailed Prediction
+```
+
+Example:
+
+| Lead Day | Bust Probability | Confidence |
+| -------- | ---------------: | ---------: |
+| D1       |               8% |        92% |
+| D2       |              12% |        88% |
+| D3       |              19% |        81% |
+| D4       |              31% |        69% |
+| D5       |              48% |        52% |
+| D6       |              63% |        37% |
+| D7       |              71% |        29% |
+| D8       |              76% |        24% |
+| D9       |              81% |        19% |
+| D10      |              84% |        16% |
+
+The user can click any day to investigate the corresponding prediction.
+
+---
+
+# 8. Journey 5 — Historical Error Investigation
+
+### Goal
+
+Determine whether the current uncertainty is consistent with historical forecast behavior.
+
+```text
+Region
+  ↓
+Analytics
+  ↓
+Select Variable
+  ↓
+Select Lead Day
+  ↓
+Historical Error
+  ↓
+Compare Current vs Historical
+```
+
+The interface displays:
+
+* MAE
+* RMSE
+* Bias
+* Historical bust rate
+* Sample count
+* Current forecast error, when observations are available
+
+Example:
+
+```text
+Historical Rainfall Error
+
+MAE:               31.6 mm
+RMSE:              42.1 mm
+Historical Bust:   34%
+Current Expected:  42.7 mm
+```
+
+---
+
+# 9. Journey 6 — Investigate an AI Alert
+
+### Goal
+
+Understand an automatically generated forecast reliability alert.
+
+```text
+Alert Notification
+       ↓
+Open Alert
+       ↓
+View Region
+       ↓
+View Bust Probability
+       ↓
+View Reasons
+       ↓
+Open Region Details
+```
+
+### Alert example
+
+```text
+AI RELIABILITY ALERT
+
+Region: Maharashtra
+Variable: Rainfall
+Lead Day: D5
+
+Bust Probability: 78%
+Confidence: 22%
+Risk: HIGH
+
+Main Factors:
+• Historical error
+• Forecast run change
+• Ensemble disagreement
+```
+
+The alert should include the forecast run and model version for traceability.
+
+---
+
+# 10. Journey 7 — Data Quality Problem
+
+### Goal
+
+Prevent users from interpreting unreliable AI output when the underlying data is incomplete.
+
+```text
+Dashboard
+    ↓
+Data Quality Warning
+    ↓
+Open Data Health
+    ↓
+Identify Affected Dataset
+    ↓
+Review Impact
+```
+
+Example:
+
+```text
+⚠ DATA QUALITY ISSUE
+
+Observation data is incomplete.
+
+Affected:
+• 4 regions
+• Rainfall
+• Day 5–Day 7
+
+AI confidence may be unavailable or degraded.
+```
+
+The system must not silently replace missing values with invented values.
+
+---
+
+# 11. Journey 8 — Model Health Check
+
+### Goal
+
+Allow technical users to verify whether the AI system is operating normally.
+
+```text
+System Health
+      ↓
+Data Sources
+      ↓
+ML Model
+      ↓
+Performance Metrics
+      ↓
+Model Version
+```
+
+Display:
+
+* Model version
+* Training period
+* Last update
+* ROC-AUC
+* Brier score
+* Calibration status
+* Data drift status
+* Current model status
+
+---
+
+# 12. Journey 9 — Forecast Run Comparison
+
+### Goal
+
+Identify whether the forecast is changing substantially between successive NWP runs.
+
+```text
+Region
+  ↓
+Forecast Details
+  ↓
+Run Comparison
+  ↓
+Current Run vs Previous Run
+  ↓
+Run-to-Run Change
+```
+
+Example:
+
+```text
+Forecast Run Comparison
+
+                 Previous     Current
+Rainfall          61 mm        84 mm
+Temperature       29.8°C       30.8°C
+Wind              15 km/h      18 km/h
+
+Run-to-run change: 38%
+```
+
+This information becomes an input to the AI reliability model and can also be shown to the user as supporting evidence.
+
+---
+
+# 13. Journey 10 — Research / Analytical Workflow
+
+Researchers may need a deeper workflow than operational users.
+
+```text
+Analytics
+   ↓
+Select Region
+   ↓
+Select Variable
+   ↓
+Select Time Period
+   ↓
+Select Lead Day
+   ↓
+Analyze MAE / RMSE
+   ↓
+Analyze Bust Rate
+   ↓
+Analyze Seasonal Pattern
+   ↓
+Analyze Weather Events
+   ↓
+Export Results
+```
+
+---
+
+# 14. End-to-End System Workflow
+
+```text
+┌──────────────────────────────┐
+│ NWP Forecast Data            │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│ Observation Data              │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│ Data Validation               │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│ Forecast–Observation Matching │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│ Historical Error Calculation  │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│ Feature Engineering           │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│ ML Bust Detection             │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│ Probability Calibration      │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│ Confidence + Risk Level       │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│ SHAP Explanation              │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│ REST API                      │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│ Web Dashboard                 │
+└──────────────────────────────┘
+```
+
+---
+
+# 15. User Decision Workflow
+
+The system should support the following reasoning process:
+
+```text
+1. Is the forecast currently available?
+             ↓
+2. Is the data quality acceptable?
+             ↓
+3. Which lead day has higher uncertainty?
+             ↓
+4. Which region is affected?
+             ↓
+5. What variable is affected?
+             ↓
+6. How large is the bust probability?
+             ↓
+7. Why did the model assign this probability?
+             ↓
+8. Does historical evidence support the concern?
+             ↓
+9. Is there an active AI reliability alert?
+             ↓
+10. Review the forecast with appropriate caution
+```
+
+The system informs the user; it does not replace official meteorological judgment or official weather warnings.
+
+---
+
+# 16. State-Based Workflow
+
+Each prediction can move through the following UI states:
+
+```text
+DATA AVAILABLE
+      ↓
+VALIDATED
+      ↓
+FEATURES READY
+      ↓
+AI PREDICTION
+      ↓
+CALIBRATED
+      ↓
+EXPLAINED
+      ↓
+DISPLAYED
+      ↓
+ALERT GENERATED (if threshold met)
+```
+
+Possible failure states:
+
+```text
+DATA MISSING
+DATA STALE
+DATA INVALID
+MODEL UNAVAILABLE
+PREDICTION UNAVAILABLE
+```
+
+The UI should explicitly communicate each failure state.
+
+---
+
+# 17. Primary Workflow Acceptance Criteria
+
+| ID    | Workflow Requirement                                                              |
+| ----- | --------------------------------------------------------------------------------- |
+| WF-01 | User can open the latest forecast dashboard                                       |
+| WF-02 | User can select a forecast variable                                               |
+| WF-03 | User can select Day 1–Day 10                                                      |
+| WF-04 | System updates the map based on selected lead day                                 |
+| WF-05 | User can identify high-risk regions                                               |
+| WF-06 | User can open regional forecast details                                           |
+| WF-07 | System displays bust probability                                                  |
+| WF-08 | System displays confidence score                                                  |
+| WF-09 | System displays historical error information                                      |
+| WF-10 | System provides an AI explanation                                                 |
+| WF-11 | User can inspect 10-day confidence trends                                         |
+| WF-12 | User can investigate AI reliability alerts                                        |
+| WF-13 | System identifies stale/missing data                                              |
+| WF-14 | System communicates model-health problems                                         |
+| WF-15 | Prediction can be traced to forecast run and model version                        |
+| WF-16 | Official weather warnings remain visually distinct from AI reliability alerts     |
+| WF-17 | System does not generate fabricated predictions when required data is unavailable |
+
+---
+
+# 18. Hackathon Demo Workflow
+
+For the final demonstration, use one simple story:
+
+```text
+                    START
+                      │
+                      ▼
+              ┌──────────────┐
+              │  Dashboard   │
+              └──────┬───────┘
+                     │
+                     ▼
+              Select Rainfall
+                     │
+                     ▼
+                 Select D5
+                     │
+                     ▼
+              ┌──────────────┐
+              │  India Map   │
+              └──────┬───────┘
+                     │
+                     ▼
+             High-risk region
+                     │
+                     ▼
+              ┌──────────────┐
+              │ Bust = 78%   │
+              │ Conf. = 22%  │
+              └──────┬───────┘
+                     │
+                     ▼
+              Historical Error
+                     │
+                     ▼
+              SHAP Explanation
+                     │
+                     ▼
+              10-Day Confidence
+                     │
+                     ▼
+                AI Alert
+                     │
+                     ▼
+                    END
+```
+
+### Demonstration message
+
+The complete user journey should demonstrate that the system can answer four questions:
+
+**WHERE?** → India confidence map
+**WHEN?** → Day 1–Day 10
+**HOW UNCERTAIN?** → Bust probability / confidence
+**WHY?** → Historical error + atmospheric/forecast features + explainable AI
+
+This workflow directly connects the user interface to the core requirements of the problem statement.

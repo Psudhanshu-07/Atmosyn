@@ -1,0 +1,783 @@
+# Project Requirements / PRD
+
+## 1. Project Overview
+
+### Project Name
+
+**AI-Based Forecast Bust Detection and Confidence Mapping System**
+
+### Problem Statement
+
+**26079 — AI-Based Forecast Bust Detection for Medium-Range Weather Forecasts**
+
+### Organization
+
+**Ministry of Earth Sciences (MoES)**
+
+### Department
+
+**National Centre for Medium Range Weather Forecasting (NCMRWF)**
+
+### Category
+
+**Software**
+
+### Theme
+
+**Smart Automation**
+
+---
+
+## 2. Problem Definition
+
+Medium-range Numerical Weather Prediction (NWP) forecasts can experience significant errors during rapidly evolving weather systems such as monsoon depressions, heavy rainfall events, western disturbances, cyclones, heat waves, and active/break monsoon phases.
+
+These forecast failures, commonly referred to as **forecast busts**, can affect operational planning and weather-sensitive decision-making.
+
+The proposed system will develop an **AI/ML-based forecast reliability layer** that analyses current NWP forecast patterns against historical forecast-error behaviour to identify:
+
+* Regions where forecasts are likely to be unreliable.
+* Forecast lead times with increased uncertainty.
+* Probability of a significant forecast error.
+* Meteorological and model-related factors contributing to low confidence.
+
+The system will not replace the existing NWP forecast. Instead, it will provide an additional **confidence and forecast-bust assessment layer**.
+
+---
+
+# 3. Product Vision
+
+The system will provide an interactive web-based operational dashboard that converts complex NWP and historical forecast-error information into an easy-to-understand:
+
+**Forecast → Error Risk → Confidence → Explanation**
+
+workflow.
+
+The platform should allow users to select a forecast lead time from **Day 1 to Day 10**, inspect region-wise confidence, identify areas with high forecast-bust probability, and understand the primary factors responsible for reduced confidence.
+
+---
+
+# 4. Objectives
+
+The primary objectives are:
+
+1. Analyse historical NWP forecast errors.
+2. Identify patterns associated with forecast busts.
+3. Predict the probability of a significant forecast error.
+4. Generate region-wise forecast confidence.
+5. Provide confidence information for Day 1–Day 10.
+6. Identify error-prone geographical areas.
+7. Provide explainable reasons for low confidence.
+8. Visualise forecast reliability through an interactive map.
+9. Provide APIs for accessing forecast-confidence information.
+10. Develop a prototype suitable for operational decision-support use.
+
+---
+
+# 5. Target Users
+
+### Primary Users
+
+* Meteorologists
+* Weather forecasting professionals
+* NWP researchers
+* Operational forecasting teams
+* Government weather departments
+* Disaster-management authorities
+
+### Secondary Users
+
+* Researchers
+* Agricultural planners
+* Infrastructure planners
+* Weather-sensitive industries
+* Academic institutions
+
+---
+
+# 6. Functional Requirements
+
+## FR-01 — Weather/NWP Data Ingestion
+
+The system shall ingest available forecast and observation datasets.
+
+The system should support:
+
+* NWP forecast data
+* Historical forecast data
+* Observed weather data
+* Atmospheric variables
+* Geographic/grid information
+* Ensemble forecast information where available
+
+The system should maintain the relationship between:
+
+**Forecast → Observation → Forecast Error**
+
+---
+
+## FR-02 — Data Preprocessing
+
+The system shall perform:
+
+* Missing-value handling
+* Data validation
+* Time alignment
+* Spatial/grid alignment
+* Unit normalization
+* Duplicate detection
+* Outlier handling where appropriate
+
+The processed data shall be converted into a standardized format suitable for machine-learning models.
+
+---
+
+## FR-03 — Forecast Error Calculation
+
+The system shall compare forecast values with corresponding observations.
+
+Example:
+
+**Forecast rainfall:** 100 mm
+**Observed rainfall:** 40 mm
+
+**Absolute error:**
+
+`|100 − 40| = 60 mm`
+
+The system shall calculate appropriate error metrics depending on the forecast variable, including:
+
+* Absolute Error
+* MAE
+* RMSE
+* Relative/percentage error where appropriate
+* Other domain-relevant error metrics
+
+---
+
+## FR-04 — Forecast Bust Identification
+
+The system shall identify significant forecast errors using predefined and data-driven thresholds.
+
+A forecast bust shall be represented as a classification target such as:
+
+* `0 = No significant bust`
+* `1 = Significant forecast bust`
+
+Thresholds should be configurable and validated against historical forecast behaviour.
+
+---
+
+## FR-05 — Feature Engineering
+
+The system shall generate predictive features from historical and current forecast information.
+
+Potential features include:
+
+* Forecast value
+* Historical forecast error
+* Rolling MAE/RMSE
+* Forecast lead time
+* Forecast run-to-run variation
+* Atmospheric pressure
+* Temperature
+* Humidity
+* Wind speed/direction
+* Rainfall
+* Geopotential height
+* CAPE
+* Vertical wind shear
+* Soil moisture
+* Ensemble spread
+* Regional information
+* Historical regional forecast reliability
+
+---
+
+## FR-06 — AI/ML Forecast Bust Prediction
+
+The system shall use machine-learning models to estimate the probability of a forecast bust.
+
+The initial prototype may evaluate models such as:
+
+* Logistic Regression
+* Random Forest
+* XGBoost
+
+The model shall output:
+
+**Bust Probability**
+
+Example:
+
+`Bust Probability = 0.73`
+
+which represents a model-estimated 73% probability of a significant forecast error under the defined target and validation methodology.
+
+---
+
+## FR-07 — Forecast Error Prediction
+
+Where sufficient training data is available, the system should additionally predict the expected magnitude of forecast error.
+
+Example:
+
+**Expected rainfall forecast error: 42 mm**
+
+This provides a continuous error estimate in addition to the bust classification.
+
+---
+
+## FR-08 — Forecast Confidence Generation
+
+The system shall convert forecast-bust probability into a confidence indicator.
+
+For the prototype:
+
+**Confidence = 1 − Bust Probability**
+
+Example:
+
+`Bust Probability = 35%`
+
+`Confidence = 65%`
+
+The confidence value shall be clearly identified as the system's **AI-derived forecast reliability indicator**, rather than an official NWP forecast.
+
+---
+
+## FR-09 — Day 1–Day 10 Analysis
+
+The system shall provide forecast reliability information for:
+
+* Day 1
+* Day 2
+* Day 3
+* Day 4
+* Day 5
+* Day 6
+* Day 7
+* Day 8
+* Day 9
+* Day 10
+
+Users shall be able to switch between lead times through the dashboard.
+
+---
+
+## FR-10 — Region-Wise Confidence
+
+The system shall provide forecast confidence at a geographical/grid level.
+
+Each region/grid cell should contain:
+
+* Forecast value
+* Forecast lead time
+* Bust probability
+* Confidence score
+* Risk category
+* Relevant explanatory factors
+
+---
+
+## FR-11 — Forecast Confidence Map
+
+The system shall provide an interactive map of India showing spatial forecast reliability.
+
+The map shall visually distinguish confidence levels.
+
+Example:
+
+* High confidence
+* Moderate confidence
+* Low confidence
+* Very low confidence
+
+Users shall be able to click a region/grid cell to view detailed information.
+
+---
+
+## FR-12 — Error-Prone Area Detection
+
+The system shall identify geographical areas where the current forecast has a comparatively high probability of error.
+
+The dashboard should provide a list such as:
+
+| Region   | Lead Time | Bust Probability | Risk     |
+| -------- | --------: | ---------------: | -------- |
+| Region A |     Day 5 |              72% | High     |
+| Region B |     Day 5 |              61% | High     |
+| Region C |     Day 5 |              43% | Moderate |
+
+The ordering and thresholds shall be based on the system's defined metrics rather than subjective judgement.
+
+---
+
+## FR-13 — Explainable AI
+
+The system shall provide explanations for low-confidence predictions.
+
+Potential contributing factors include:
+
+* High historical forecast error
+* High ensemble spread
+* Large forecast run-to-run change
+* Long forecast lead time
+* Rapid atmospheric changes
+* Unusual weather patterns
+* Region-specific historical instability
+
+Where applicable, explainability techniques such as **SHAP** may be used to identify influential model features.
+
+Example:
+
+> **Low Confidence**
+>
+> Bust Probability: 76%
+>
+> Main contributing factors:
+>
+> * High ensemble spread
+> * Significant forecast change from previous run
+> * Elevated historical rainfall error
+> * Rapid pressure variation
+
+---
+
+## FR-14 — Historical Error Analytics
+
+The dashboard shall provide historical analysis including:
+
+* Forecast vs observed values
+* Error by region
+* Error by lead time
+* Error trends
+* Historical bust frequency
+* Model performance statistics
+
+---
+
+## FR-15 — Weather Event Analysis
+
+Where suitable data is available, the system should support analysis of forecast reliability during major weather-system categories, such as:
+
+* Heavy rainfall
+* Monsoon depressions
+* Cyclones
+* Western disturbances
+* Heat waves
+* Active monsoon phases
+* Break monsoon phases
+
+---
+
+## FR-16 — REST API
+
+The backend shall expose APIs for accessing prediction results.
+
+Example endpoints:
+
+```text
+GET /api/forecast
+GET /api/confidence
+GET /api/bust-probability
+GET /api/confidence-map
+GET /api/explanation
+GET /api/history
+```
+
+Example request:
+
+```text
+GET /api/confidence?region=Maharashtra&day=5
+```
+
+Example response:
+
+```json
+{
+  "region": "Maharashtra",
+  "lead_day": 5,
+  "bust_probability": 0.42,
+  "confidence": 0.58,
+  "risk_level": "MODERATE"
+}
+```
+
+---
+
+# 7. Dashboard Requirements
+
+The web application shall contain the following major sections.
+
+## 7.1 Main Dashboard
+
+The dashboard shall display:
+
+* Current forecast date
+* Selected forecast lead time
+* India confidence map
+* Overall statistics
+* High-risk regions
+* Bust probability
+* Confidence level
+* AI-generated explanations
+
+---
+
+## 7.2 Forecast Map
+
+Users shall be able to:
+
+* Select Day 1–Day 10
+* Zoom into India
+* Select a region/grid
+* View confidence
+* View bust probability
+* View forecast information
+* View explanation
+
+---
+
+## 7.3 Region Details
+
+A selected region shall display:
+
+```text
+Region
+Forecast Lead Time
+Forecast Value
+Bust Probability
+Confidence
+Risk Level
+Historical Error
+Current Forecast Change
+Important Contributing Factors
+```
+
+---
+
+## 7.4 Analytics Dashboard
+
+The analytics section shall provide:
+
+* Historical error charts
+* Forecast vs observation comparison
+* Error by lead time
+* Regional reliability
+* Model evaluation metrics
+* Bust frequency
+
+---
+
+# 8. Non-Functional Requirements
+
+## NFR-01 — Performance
+
+The dashboard should provide interactive responses without unnecessary delays.
+
+## NFR-02 — Scalability
+
+The architecture should support increasing:
+
+* Number of regions
+* Historical records
+* Weather variables
+* Forecast cycles
+* Users
+
+## NFR-03 — Reliability
+
+The system should gracefully handle:
+
+* Missing data
+* Invalid data
+* API failures
+* Model failures
+* Incomplete forecast datasets
+
+## NFR-04 — Explainability
+
+AI predictions should be accompanied by interpretable information wherever possible.
+
+## NFR-05 — Security
+
+The backend shall implement:
+
+* API validation
+* Input validation
+* Authentication for administrative functions
+* Secure environment-variable handling
+* Protection of sensitive configuration
+
+## NFR-06 — Maintainability
+
+The application should use modular components for:
+
+* Data ingestion
+* Preprocessing
+* Feature engineering
+* ML inference
+* API
+* Frontend
+* Database
+
+---
+
+# 9. Proposed Technology Stack
+
+### Frontend
+
+* React.js
+* HTML5
+* CSS
+* JavaScript/TypeScript
+
+### Backend
+
+* Python
+* FastAPI
+
+### Machine Learning
+
+* Python
+* Pandas
+* NumPy
+* Scikit-learn
+* XGBoost
+* SHAP
+
+### Database
+
+* PostgreSQL
+
+### Visualization
+
+* Leaflet.js
+* Plotly
+* Chart.js
+
+### Deployment
+
+* Frontend: Vercel or equivalent
+* Backend: Render/Railway or equivalent
+* Database: PostgreSQL-compatible cloud database
+
+---
+
+# 10. High-Level Architecture
+
+```text
+             NWP FORECAST DATA
+                     │
+             OBSERVATION DATA
+                     │
+             HISTORICAL DATA
+                     │
+                     ▼
+            ┌─────────────────┐
+            │ DATA INGESTION  │
+            └────────┬────────┘
+                     ▼
+            ┌─────────────────┐
+            │ PREPROCESSING   │
+            └────────┬────────┘
+                     ▼
+            ┌─────────────────┐
+            │ FEATURE ENGINE  │
+            └────────┬────────┘
+                     ▼
+        ┌────────────┴────────────┐
+        │                         │
+        ▼                         ▼
+ ERROR PREDICTION          BUST CLASSIFICATION
+        │                         │
+        └────────────┬────────────┘
+                     ▼
+             PROBABILITY
+              CALIBRATION
+                     │
+                     ▼
+          ┌────────────────────┐
+          │ CONFIDENCE ENGINE  │
+          └─────────┬──────────┘
+                    ▼
+          ┌────────────────────┐
+          │ EXPLAINABILITY     │
+          └─────────┬──────────┘
+                    ▼
+          ┌────────────────────┐
+          │ FASTAPI BACKEND    │
+          └─────────┬──────────┘
+                    ▼
+          ┌────────────────────┐
+          │ WEB DASHBOARD      │
+          └────────────────────┘
+```
+
+---
+
+# 11. Data Requirements
+
+The minimum dataset should contain paired forecast and observation records.
+
+Required conceptual fields include:
+
+```text
+Date
+Latitude
+Longitude
+Forecast Lead Time
+Forecast Variables
+Observed Variables
+Atmospheric Variables
+Historical Error
+Forecast Run Information
+Regional Information
+```
+
+For each forecast:
+
+```text
+Forecast → Observation → Error → Bust Label
+```
+
+The dataset should cover multiple forecast lead times and, where possible, historical weather events associated with forecast busts.
+
+---
+
+# 12. ML Model Requirements
+
+The model training pipeline shall include:
+
+1. Data preparation
+2. Feature engineering
+3. Train/validation/test split
+4. Model training
+5. Hyperparameter tuning
+6. Model evaluation
+7. Probability calibration
+8. Explainability
+9. Model versioning
+10. Inference
+
+Evaluation should consider:
+
+* Precision
+* Recall
+* F1-score
+* ROC-AUC
+* Confusion Matrix
+* Brier Score
+* Probability calibration
+
+Accuracy alone shall not be used as the primary measure of model quality.
+
+---
+
+# 13. MVP Scope
+
+The first working prototype shall contain:
+
+### Must Have
+
+* Historical forecast-error dataset
+* Forecast bust definition
+* ML bust prediction model
+* Bust probability
+* Confidence score
+* Day 1–Day 10 analysis
+* India confidence map
+* Region-level details
+* Basic AI explanation
+* FastAPI backend
+* Web dashboard
+
+### Should Have
+
+* SHAP explanations
+* Historical analytics
+* Forecast run-to-run instability
+* Ensemble spread
+* Weather-event categorisation
+* Model performance dashboard
+
+### Future Enhancement
+
+* Real-time NWP ingestion
+* Automated forecast-cycle processing
+* Advanced deep-learning models
+* Multi-model NWP comparison
+* Automated alert generation
+* Operational integration with external systems
+* More detailed meteorological event classification
+
+---
+
+# 14. Key User Journey
+
+```text
+User opens dashboard
+        ↓
+Selects forecast date
+        ↓
+Selects Day 1–Day 10
+        ↓
+Views India confidence map
+        ↓
+Identifies high-risk region
+        ↓
+Clicks region
+        ↓
+Views forecast + bust probability
+        ↓
+Views confidence score
+        ↓
+Views historical error
+        ↓
+Views AI explanation
+        ↓
+Uses information for operational assessment
+```
+
+---
+
+# 15. Success Criteria
+
+The prototype will be considered successful when it can:
+
+* Process historical forecast and observation data.
+* Calculate forecast errors.
+* Identify significant forecast busts using the defined methodology.
+* Generate a validated bust-probability prediction.
+* Generate region-wise confidence information.
+* Provide Day 1–Day 10 confidence analysis.
+* Display forecast reliability on an interactive map.
+* Identify areas with elevated forecast-bust probability.
+* Explain major factors associated with low-confidence predictions.
+* Expose predictions through an API.
+* Present the results through a usable operational dashboard.
+
+---
+
+# 16. Core Product Output
+
+The final system should answer four questions:
+
+### 1. WHERE?
+
+**Which regions have potentially unreliable forecasts?**
+
+### 2. WHEN?
+
+**At which forecast lead times is reliability reduced?**
+
+### 3. HOW MUCH?
+
+**What is the estimated probability of a significant forecast error?**
+
+### 4. WHY?
+
+**What factors are contributing to the reduced confidence?**
+
+The final product therefore acts as an **AI-powered forecast reliability and forecast-bust detection layer over medium-range NWP forecasts**, rather than replacing the underlying weather forecasting system.

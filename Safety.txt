@@ -1,0 +1,562 @@
+# Safety & Alert Rules Document
+
+**Project:** AI-Based Forecast Bust Detection for Medium-Range Weather Forecasts
+**Problem Statement:** 26079 – MoES / NCMRWF
+**Document Type:** Safety & Alert Rules Specification
+**Version:** 1.0
+
+## 1. Purpose
+
+The Safety & Alert module ensures that the system communicates **forecast uncertainty and potential forecast busts responsibly**.
+
+The system must **not present an AI prediction as an official weather warning**. It is a decision-support and forecast-reliability system that indicates where the NWP forecast may be less reliable.
+
+---
+
+## 2. Safety Principles
+
+| ID     | Rule                            | Requirement                                                     |
+| ------ | ------------------------------- | --------------------------------------------------------------- |
+| SAF-01 | No false certainty              | Never present AI predictions as guaranteed outcomes             |
+| SAF-02 | No official-warning replacement | AI alerts must not replace IMD/NCMRWF/official warnings         |
+| SAF-03 | Probability disclosure          | Display bust probability and confidence clearly                 |
+| SAF-04 | Source traceability             | Every alert must have traceable forecast/data sources           |
+| SAF-05 | Model transparency              | Display model version used for prediction                       |
+| SAF-06 | Data-quality protection         | Do not generate alerts from invalid or severely incomplete data |
+| SAF-07 | Stale-data protection           | Do not generate current alerts from outdated forecast data      |
+| SAF-08 | Uncertainty visibility          | High uncertainty should be explicitly shown                     |
+| SAF-09 | Human oversight                 | Operational decisions should remain with authorized users       |
+| SAF-10 | Alert audit                     | Store alert generation time, inputs and model version           |
+
+---
+
+# 3. Alert Categories
+
+The system should distinguish between **forecast reliability alerts** and **official weather warnings**.
+
+### A. Forecast Bust Alert
+
+Indicates that the AI model predicts an increased probability of significant forecast error.
+
+```text
+AI Forecast Bust Alert
+```
+
+### B. Low Confidence Alert
+
+Indicates that the forecast has relatively low reliability.
+
+```text
+Low Forecast Confidence
+```
+
+### C. Data Quality Alert
+
+Indicates that the input weather data may not be reliable enough for prediction.
+
+```text
+Data Quality Warning
+```
+
+### D. Model Health Alert
+
+Indicates an issue with the AI prediction service.
+
+```text
+Model/API Health Warning
+```
+
+### E. Official Warning Indicator
+
+If official warning data are integrated, display them separately as:
+
+```text
+OFFICIAL WEATHER WARNING
+Source: Official Meteorological Agency
+```
+
+**Never combine an AI-generated alert and an official warning into one indistinguishable alert.**
+
+---
+
+# 4. Bust Probability Rules
+
+The model produces:
+
+```text
+Bust Probability = 0–100%
+```
+
+Recommended prototype thresholds:
+
+| Probability | AI Risk Level | Dashboard Treatment |
+| ----------: | ------------- | ------------------- |
+|       0–20% | Very Low      | Normal              |
+|      20–40% | Low           | Monitor             |
+|      40–60% | Moderate      | Attention           |
+|      60–80% | High          | Alert               |
+|     80–100% | Very High     | Critical attention  |
+
+These are **prototype thresholds**, not official meteorological warning thresholds.
+
+They should be configurable after evaluating the historical dataset.
+
+---
+
+# 5. Confidence Rules
+
+The system can initially calculate:
+
+```text
+Confidence = 1 - Calibrated Bust Probability
+```
+
+Example:
+
+```text
+Bust probability = 72%
+Confidence       = 28%
+```
+
+Dashboard:
+
+```text
+Forecast Confidence: LOW
+Bust Probability: 72%
+```
+
+The UI should avoid wording such as:
+
+> “Forecast is wrong.”
+
+Instead use:
+
+> **“High probability of significant forecast error.”**
+
+---
+
+# 6. Alert Generation Logic
+
+```text
+New Forecast
+     ↓
+Data Quality Check
+     ↓
+Is data valid?
+   /       \
+ NO         YES
+ │           │
+ ▼           ▼
+No Alert   Feature Generation
+             ↓
+          ML Model
+             ↓
+       Bust Probability
+             ↓
+       Probability Check
+             ↓
+      ┌──────┴───────┐
+      │              │
+   < Threshold    ≥ Threshold
+      │              │
+      ▼              ▼
+   No Alert      Generate AI Alert
+                     ↓
+                SHAP Analysis
+                     ↓
+              Generate Reasons
+                     ↓
+                 Store Alert
+                     ↓
+                  Dashboard
+```
+
+---
+
+# 7. Data Quality Safety Rules
+
+The system must **not produce a high-confidence AI alert when the input data itself is unreliable**.
+
+### Rule examples
+
+```text
+IF observation_missing = TRUE
+THEN flag "Insufficient Observation Data"
+```
+
+```text
+IF forecast_data_age > allowed_limit
+THEN flag "Stale Forecast"
+```
+
+```text
+IF required_features_missing > threshold
+THEN do_not_predict = TRUE
+```
+
+```text
+IF spatial_alignment_failed = TRUE
+THEN do_not_predict = TRUE
+```
+
+```text
+IF time_alignment_failed = TRUE
+THEN do_not_predict = TRUE
+```
+
+---
+
+# 8. Stale Forecast Rule
+
+Every forecast has a run time.
+
+Example:
+
+```text
+Forecast Run:
+28 Sep 2026 00:00 UTC
+```
+
+When a newer run becomes available:
+
+```text
+28 Sep 2026 06:00 UTC
+```
+
+the system should identify the previous forecast as superseded where appropriate.
+
+The dashboard should show:
+
+```text
+Forecast Run: 28 Sep 2026 06 UTC
+Data Status: CURRENT
+```
+
+or:
+
+```text
+Forecast Run: 28 Sep 2026 00 UTC
+Data Status: OUTDATED
+```
+
+---
+
+# 9. Alert Deduplication
+
+The system should avoid repeatedly generating the same alert.
+
+Define a unique alert key:
+
+```text
+region_id
++
+forecast_run
++
+valid_time
++
+variable
++
+alert_type
+```
+
+Example:
+
+```text
+MH_MUM
++
+2026-09-28T00:00Z
++
+2026-10-02T00:00Z
++
+rainfall
++
+BUST
+```
+
+If the same alert already exists:
+
+```text
+DO NOT CREATE DUPLICATE ALERT
+```
+
+Instead:
+
+```text
+UPDATE EXISTING ALERT
+```
+
+---
+
+# 10. Alert Escalation
+
+If a region remains at high bust probability across multiple forecast runs:
+
+```text
+Run 1 → 65%
+Run 2 → 72%
+Run 3 → 81%
+```
+
+the system can increase the **AI monitoring priority**.
+
+Example:
+
+```text
+Persistent Uncertainty
+```
+
+However, escalation should be based on **forecast reliability**, not interpreted as confirmation that a severe weather event will occur.
+
+---
+
+# 11. Explainability Requirement
+
+Every high-risk alert should provide at least **2–3 contributing factors** where the model supports them.
+
+Example:
+
+```text
+HIGH FORECAST BUST RISK
+
+Bust Probability: 78%
+
+Contributing factors:
+1. High historical rainfall error
+2. Large run-to-run forecast change
+3. High ensemble spread
+
+Forecast Lead: Day 6
+Variable: Rainfall
+Region: Western Maharashtra
+```
+
+SHAP should be used to determine the contribution of model features.
+
+---
+
+# 12. Alert Message Format
+
+### AI Forecast Bust Alert
+
+```text
+┌─────────────────────────────────────┐
+│ AI FORECAST BUST ALERT              │
+├─────────────────────────────────────┤
+│ Region: Western Maharashtra         │
+│ Variable: Rainfall                  │
+│ Lead Time: Day 6                    │
+│                                     │
+│ Bust Probability: 78%               │
+│ Confidence: LOW                     │
+│ Risk: HIGH                          │
+│                                     │
+│ Main Factors:                       │
+│ • High historical error             │
+│ • Large forecast run change         │
+│ • High ensemble spread              │
+│                                     │
+│ This is an AI-derived reliability   │
+│ indicator, not an official warning. │
+└─────────────────────────────────────┘
+```
+
+---
+
+# 13. Official Warning Separation
+
+If your system later integrates official warnings:
+
+```text
+┌─────────────────────────────────────┐
+│ OFFICIAL WEATHER WARNING             │
+│ Source: Official Meteorological     │
+│ Agency                              │
+└─────────────────────────────────────┘
+
+                +
+
+┌─────────────────────────────────────┐
+│ AI FORECAST RELIABILITY ALERT        │
+│ Bust Probability: 78%               │
+│ Source: AI Reliability Model        │
+└─────────────────────────────────────┘
+```
+
+The two must remain visually and semantically distinct.
+
+---
+
+# 14. Alert API
+
+### GET `/api/v1/alerts`
+
+Returns active alerts.
+
+### Example
+
+```json
+{
+  "alerts": [
+    {
+      "alert_id": "ALT-00125",
+      "region_id": "MH_MUM",
+      "variable": "rainfall",
+      "lead_day": 6,
+      "bust_probability": 0.78,
+      "confidence": 0.22,
+      "risk_level": "HIGH",
+      "alert_type": "FORECAST_BUST",
+      "status": "ACTIVE",
+      "model_version": "xgb_v1.3",
+      "generated_at": "2026-09-28T06:15:00Z"
+    }
+  ]
+}
+```
+
+---
+
+# 15. Alert Acknowledgement
+
+For an operational-style prototype:
+
+### POST `/api/v1/alerts/{alert_id}/acknowledge`
+
+```json
+{
+  "acknowledged_by": "operator",
+  "acknowledged_at": "2026-09-28T07:20:00Z"
+}
+```
+
+Possible statuses:
+
+```text
+ACTIVE
+ACKNOWLEDGED
+RESOLVED
+EXPIRED
+SUPPRESSED
+```
+
+---
+
+# 16. Alert Expiration
+
+Alerts should automatically expire when:
+
+* The forecast valid time has passed.
+* A newer forecast supersedes the relevant prediction.
+* The alert condition falls below the configured threshold.
+* Required data becomes invalid.
+* The alert is manually resolved by an authorized operator.
+
+Example:
+
+```text
+Day 5 Alert
+     ↓
+Valid time passed
+     ↓
+ALERT → EXPIRED
+```
+
+---
+
+# 17. Model Safety Rules
+
+The ML model should be monitored for:
+
+| Metric      | Purpose                                                  |
+| ----------- | -------------------------------------------------------- |
+| Precision   | Avoid excessive false alarms                             |
+| Recall      | Detect important bust cases                              |
+| F1 Score    | Balance precision and recall                             |
+| ROC-AUC     | Classification performance                               |
+| Brier Score | Probability quality                                      |
+| Calibration | Ensure 70% probability means approximately 70% frequency |
+| MAE         | Expected-error model                                     |
+| RMSE        | Large-error sensitivity                                  |
+| Data drift  | Detect changing weather/data patterns                    |
+
+If model performance falls below a configured threshold:
+
+```text
+MODEL STATUS → DEGRADED
+```
+
+and the dashboard should display:
+
+> **AI reliability predictions temporarily degraded.**
+
+---
+
+# 18. Fail-Safe Behaviour
+
+If the AI service fails:
+
+```text
+AI Model
+   ↓
+ERROR
+   ↓
+Do NOT invent prediction
+   ↓
+Show:
+"AI confidence unavailable"
+```
+
+If the database fails:
+
+```text
+No cached prediction → No prediction displayed
+```
+
+If weather data are unavailable:
+
+```text
+Weather data unavailable
+↓
+AI alert generation suspended
+```
+
+The system should **fail safely rather than displaying fabricated values**.
+
+---
+
+# 19. User-Facing Disclaimer
+
+Recommended dashboard disclaimer:
+
+> **AI Forecast Reliability Notice:** The bust probability and confidence indicators shown by this system are AI-derived estimates of forecast reliability based on available historical and current weather data. They do not constitute an official weather warning or replace forecasts, advisories, or warnings issued by authorized meteorological agencies.
+
+---
+
+# 20. Safety Acceptance Criteria
+
+| ID        | Acceptance Criteria                                                      |
+| --------- | ------------------------------------------------------------------------ |
+| SAF-AC-01 | System never presents AI bust probability as an official weather warning |
+| SAF-AC-02 | Every alert contains region, variable and forecast lead time             |
+| SAF-AC-03 | Every alert contains bust probability and confidence                     |
+| SAF-AC-04 | High-risk alerts provide explainable contributing factors                |
+| SAF-AC-05 | Invalid/stale data cannot silently generate predictions                  |
+| SAF-AC-06 | Alerts are deduplicated                                                  |
+| SAF-AC-07 | Expired alerts are automatically removed from active alerts              |
+| SAF-AC-08 | Model version is recorded for every prediction                           |
+| SAF-AC-09 | Data source and forecast run are traceable                               |
+| SAF-AC-10 | AI service failure produces an explicit unavailable state                |
+| SAF-AC-11 | Official warnings, if integrated, remain clearly separate                |
+| SAF-AC-12 | Probability outputs are calibrated and evaluated against historical data |
+
+### Core safety principle
+
+**The system should answer:**
+
+> “Where and when is the NWP forecast likely to be unreliable, and why?”
+
+It should **not** answer:
+
+> “What weather event will definitely happen?”
+
+That distinction is important for keeping the prototype scientifically and operationally responsible.

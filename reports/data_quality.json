@@ -1,0 +1,49 @@
+{
+  "generated_at": "2026-09-29T07:42:01.357885+00:00",
+  "overall_status": "WARN",
+  "checks": [
+    {
+      "name": "missing_values",
+      "category": "completeness",
+      "status": "PASS",
+      "affected_rows": 0,
+      "details": "{\"forecasts.value\": 0, \"observations.value\": 0, \"historical_errors.absolute_error\": 0, \"predictions.bust_probability\": 0}"
+    },
+    {
+      "name": "freshness",
+      "category": "timeliness",
+      "status": "WARN",
+      "affected_rows": 1,
+      "details": "Latest forecast run is 31.7h old (limit 30h)"
+    },
+    {
+      "name": "duplicate_keys",
+      "category": "uniqueness",
+      "status": "PASS",
+      "affected_rows": 0,
+      "details": "{\"observations\": 0, \"historical_errors\": 0, \"forecasts\": 0}"
+    },
+    {
+      "name": "out_of_range_values",
+      "category": "validity",
+      "status": "PASS",
+      "affected_rows": 0,
+      "details": "All values within bounds"
+    },
+    {
+      "name": "region_coordinates",
+      "category": "validity",
+      "status": "PASS",
+      "affected_rows": 0,
+      "details": "All regions inside India bbox"
+    }
+  ],
+  "totals": {
+    "checks_run": 5,
+    "fails": 0,
+    "warnings": 1,
+    "quarantined_rows": 0
+  },
+  "quarantine_file": null,
+  "note": "Reported rows are quarantined, never silently corrected or replaced with synthetic values."
+}

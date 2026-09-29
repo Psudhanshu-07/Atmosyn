@@ -1,0 +1,83 @@
+{
+  "note": "TEST period only. Proof: LOW confidence rows should show larger mean_abs_error and higher bust_rate than HIGH.",
+  "variable": "rainfall",
+  "table": [
+    {
+      "lead_day": 1,
+      "confidence_label": "HIGH",
+      "rows": 288,
+      "mean_abs_error": 1.437,
+      "bust_rate": 0.0
+    },
+    {
+      "lead_day": 3,
+      "confidence_label": "HIGH",
+      "rows": 324,
+      "mean_abs_error": 2.367,
+      "bust_rate": 0.0031
+    },
+    {
+      "lead_day": 5,
+      "confidence_label": "HIGH",
+      "rows": 321,
+      "mean_abs_error": 2.76,
+      "bust_rate": 0.0031
+    },
+    {
+      "lead_day": 5,
+      "confidence_label": "MEDIUM",
+      "rows": 1,
+      "mean_abs_error": 19.9,
+      "bust_rate": 0.0
+    },
+    {
+      "lead_day": 5,
+      "confidence_label": "LOW",
+      "rows": 2,
+      "mean_abs_error": 30.0,
+      "bust_rate": 1.0
+    },
+    {
+      "lead_day": 7,
+      "confidence_label": "HIGH",
+      "rows": 314,
+      "mean_abs_error": 2.921,
+      "bust_rate": 0.0032
+    },
+    {
+      "lead_day": 7,
+      "confidence_label": "MEDIUM",
+      "rows": 3,
+      "mean_abs_error": 33.067,
+      "bust_rate": 1.0
+    },
+    {
+      "lead_day": 7,
+      "confidence_label": "LOW",
+      "rows": 7,
+      "mean_abs_error": 35.786,
+      "bust_rate": 0.8571
+    },
+    {
+      "lead_day": 10,
+      "confidence_label": "HIGH",
+      "rows": 317,
+      "mean_abs_error": 3.226,
+      "bust_rate": 0.0158
+    },
+    {
+      "lead_day": 10,
+      "confidence_label": "MEDIUM",
+      "rows": 7,
+      "mean_abs_error": 26.529,
+      "bust_rate": 0.7143
+    },
+    {
+      "lead_day": 10,
+      "confidence_label": "LOW",
+      "rows": 36,
+      "mean_abs_error": 55.794,
+      "bust_rate": 0.9722
+    }
+  ]
+}

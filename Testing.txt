@@ -1,0 +1,198 @@
+## Testing & Validation Plan
+
+| ID    | Testing / Validation Area         | Objective                                                                    | Method                                                                                                                                     | Tools / Metrics                                                 | Acceptance Criteria                                                                            |
+| ----- | --------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| TV-01 | **Unit Testing**                  | Verify individual frontend, backend, data-processing, and ML functions       | Test functions independently using valid, invalid, boundary, and missing inputs                                                            | Pytest, Vitest, React Testing Library                           | ≥80% coverage for critical backend/ML logic; all critical tests pass                           |
+| TV-02 | **API Testing**                   | Verify REST API correctness and reliability                                  | Test every MVP endpoint for success, validation errors, missing parameters, invalid IDs, and server failures                               | Pytest, FastAPI TestClient, OpenAPI/Swagger                     | Correct status codes and response schemas; no unhandled API errors                             |
+| TV-03 | **Data Validation Testing**       | Ensure weather/NWP data is valid before entering the ML pipeline             | Test timestamps, coordinates, units, variables, duplicates, missing values, ranges, lead days, and source metadata                         | Pandas, Pydantic, custom validation rules                       | Invalid records rejected or flagged; valid records processed correctly                         |
+| TV-04 | **Forecast–Observation Matching** | Verify forecasts are paired with the correct observations                    | Match using region/grid, variable, valid time, and lead day; manually inspect sampled pairs                                                | Pandas/xarray, SQL queries                                      | No incorrect time/location pairing in validated test samples                                   |
+| TV-05 | **Forecast Error Calculation**    | Verify forecast error and historical statistics                              | Compare calculated MAE, RMSE, bias, absolute error, and bust labels against independently calculated reference values                      | Python/Pandas, NumPy                                            | Calculated metrics match reference calculations within defined numerical tolerance             |
+| TV-06 | **Bust Label Validation**         | Ensure forecast bust labels are generated consistently                       | Test configurable variable-specific thresholds and historical/percentile-based thresholds                                                  | Python, SQL                                                     | Identical input always produces identical bust label                                           |
+| TV-07 | **Feature Engineering Testing**   | Verify ML features are calculated correctly                                  | Validate lead time, historical MAE/RMSE, bust rate, run-to-run change, ensemble spread, atmospheric variables, season, and event features  | Pandas, NumPy                                                   | No feature leakage from future observations; expected values reproduced                        |
+| TV-08 | **Data Leakage Testing**          | Prevent future information from entering predictions                         | Perform temporal train/validation/test split and inspect feature-generation pipeline                                                       | Scikit-learn, custom checks                                     | No observation or error information from the prediction period is used as an input feature     |
+| TV-09 | **ML Regression Validation**      | Evaluate expected forecast-error prediction                                  | Train/test on unseen historical periods and regions                                                                                        | MAE, RMSE, R²                                                   | Model performs better than a defined baseline or provides demonstrable predictive value        |
+| TV-10 | **ML Classification Validation**  | Evaluate bust-probability prediction                                         | Test on unseen forecast cases                                                                                                              | Precision, recall, F1, ROC-AUC, PR-AUC                          | Metrics reported separately for each major variable/lead-time group where sample size permits  |
+| TV-11 | **Probability Calibration**       | Ensure predicted bust probabilities are meaningful                           | Compare predicted probabilities with observed bust frequencies                                                                             | Brier score, calibration curve, reliability diagram             | Calibrated model performs no worse than the uncalibrated model on validation data              |
+| TV-12 | **Confidence Score Validation**   | Verify confidence is correctly derived from calibrated reliability estimates | Test confidence calculation and boundary cases                                                                                             | Formula tests, range checks                                     | Confidence remains within 0–1; higher bust probability always produces lower confidence        |
+| TV-13 | **SHAP Explainability Testing**   | Ensure explanations correspond to actual model behavior                      | Compare SHAP feature contributions with model predictions and perturb selected features                                                    | SHAP, feature perturbation tests                                | Explanation features and impacts are traceable to the actual prediction                        |
+| TV-14 | **Spatial Validation**            | Check regional consistency of predictions and map rendering                  | Test multiple states/districts/grid cells and boundary cases                                                                               | PostGIS, GeoJSON, Leaflet                                       | Correct region geometry and prediction are displayed for each location                         |
+| TV-15 | **Temporal Validation**           | Verify Day 1–Day 10 behavior                                                 | Test forecasts across different lead days and forecast runs                                                                                | SQL/Pandas, API tests                                           | Correct lead day, run time, and valid time displayed throughout the system                     |
+| TV-16 | **Historical Backtesting**        | Determine whether the system can identify previously observed forecast busts | Replay historical forecast runs without exposing future observations to the model                                                          | Walk-forward validation, confusion matrix, reliability diagrams | Model demonstrates measurable ability to distinguish higher- and lower-error cases             |
+| TV-17 | **Baseline Comparison**           | Determine whether AI adds value over simple reliability rules                | Compare ML predictions against historical-average/threshold-based baseline                                                                 | MAE/RMSE, F1, ROC-AUC, Brier score                              | ML results are reported alongside baseline rather than assuming ML superiority                 |
+| TV-18 | **Cross-Season Validation**       | Check robustness across different weather regimes                            | Validate separately for monsoon, post-monsoon, winter, and pre-monsoon periods where sufficient data exists                                | Seasonal MAE, RMSE, bust rate, calibration                      | Performance and limitations documented by season                                               |
+| TV-19 | **Extreme-Event Validation**      | Test behavior during high-impact weather situations                          | Evaluate historical heavy-rainfall, cyclone, heat-wave, and other available event periods                                                  | Event-wise recall, precision, error distributions               | System does not silently fail during extreme or unusual atmospheric conditions                 |
+| TV-20 | **Missing-Data Testing**          | Verify safe behavior when required data is unavailable                       | Remove observations, forecasts, features, or data-source responses during testing                                                          | Fault injection, API tests                                      | System displays unavailable/degraded status instead of generating fabricated confidence        |
+| TV-21 | **Stale-Data Testing**            | Prevent outdated forecasts from being presented as current                   | Simulate delayed or old NWP runs                                                                                                           | Timestamp validation                                            | Forecast status changes to outdated/degraded according to configured freshness rules           |
+| TV-22 | **Alert Testing**                 | Verify AI reliability alerts are generated correctly                         | Test probability thresholds, deduplication, expiration, acknowledgement, and repeated forecasts                                            | API/UI tests, database checks                                   | Alerts are generated once per defined deduplication key and expire correctly                   |
+| TV-23 | **Official Warning Separation**   | Ensure AI reliability alerts are not confused with official warnings         | Inspect UI, API fields, labels, and alert workflows                                                                                        | Manual UI review, automated UI tests                            | AI alerts and official meteorological warnings are visually and semantically distinct          |
+| TV-24 | **Frontend UI Testing**           | Verify dashboard functionality                                               | Test filters, map interactions, charts, tables, navigation, loading states, and errors                                                     | Vitest, React Testing Library, Playwright                       | All critical user journeys complete without blocking UI defects                                |
+| TV-25 | **Map Validation**                | Verify India confidence/bust maps                                            | Compare rendered regions and values with API responses                                                                                     | Leaflet, browser testing                                        | Map values, legends, region selection, and lead-day filters match backend data                 |
+| TV-26 | **Responsive Testing**            | Ensure usable dashboard across screen sizes                                  | Test desktop, tablet, and smaller screens                                                                                                  | Browser DevTools, Playwright                                    | No critical information is inaccessible or unusable at supported resolutions                   |
+| TV-27 | **Accessibility Testing**         | Make the dashboard usable for users with accessibility needs                 | Keyboard navigation, labels, focus states, contrast, chart alternatives, semantic HTML                                                     | axe-core, Lighthouse, manual testing                            | Critical accessibility violations resolved; core workflows keyboard accessible                 |
+| TV-28 | **Performance Testing**           | Verify acceptable API and dashboard response times                           | Load representative forecast/map/analytics requests                                                                                        | Locust or k6, browser performance tools                         | MVP target: common API requests respond within ~2 seconds under normal demo load               |
+| TV-29 | **Database Testing**              | Verify schema, relationships, indexes, constraints, and spatial queries      | CRUD tests, foreign-key tests, invalid-record tests, spatial queries                                                                       | PostgreSQL/PostGIS, Pytest                                      | No orphaned critical records; constraints and indexes operate correctly                        |
+| TV-30 | **Security Testing**              | Identify common application vulnerabilities                                  | Test authentication, authorization, injection, XSS, file uploads, rate limits, CORS, and secrets                                           | OWASP ZAP, dependency scanners, Pytest                          | No critical security vulnerability remains in the MVP                                          |
+| TV-31 | **File Upload Testing**           | Prevent malicious or invalid weather files from entering the pipeline        | Upload valid/invalid CSV, JSON, NetCDF, GRIB, oversized, malformed, and unexpected files                                                   | FastAPI tests, file validation                                  | Invalid/unsafe files rejected with clear errors                                                |
+| TV-32 | **Model Version Testing**         | Ensure predictions are associated with the correct model                     | Deploy multiple model versions and verify prediction metadata                                                                              | Database/API tests                                              | Every prediction records model version and relevant feature/configuration metadata             |
+| TV-33 | **Reproducibility Testing**       | Ensure the same model and input produce reproducible results                 | Repeat prediction using identical inputs and model version                                                                                 | Python tests, model hashes                                      | Results remain within defined numerical tolerance                                              |
+| TV-34 | **End-to-End Testing**            | Validate the complete operational pipeline                                   | Run NWP/observation input → validation → error calculation → feature generation → ML → confidence → API → dashboard                        | Pytest, Playwright, Docker                                      | Complete MVP workflow executes successfully using test data                                    |
+| TV-35 | **Failure-Recovery Testing**      | Verify safe operation after component failures                               | Stop database, ML service, data source, or worker and observe behavior                                                                     | Docker, fault injection                                         | System shows a clear degraded/unavailable state and does not fabricate predictions             |
+| TV-36 | **User Acceptance Testing**       | Confirm the prototype satisfies operational requirements                     | Demonstrate predefined meteorologist/analyst workflows using representative cases                                                          | UAT checklist                                                   | All critical workflows completed and documented                                                |
+| TV-37 | **Scientific Validation**         | Confirm that outputs are meteorologically interpretable                      | Review selected cases with domain knowledge and compare explanations with known forecast-error conditions                                  | Expert review, case studies                                     | Explanations are supported by available data and do not claim unsupported causal relationships |
+| TV-38 | **Final Hackathon Validation**    | Demonstrate the complete PS requirement                                      | Run a fixed demonstration dataset and show Day 1–Day 10 confidence, bust probability, error-prone regions, explanations, and dashboard/API | Demo checklist                                                  | All core PS outcomes demonstrated end-to-end                                                   |
+
+### 1. ML Validation Strategy
+
+The ML model should **not** be evaluated only by random train/test splitting because weather data is strongly time-dependent.
+
+Recommended approach:
+
+```text
+Historical Data
+      │
+      ▼
+Chronological Split
+      │
+      ├── Training Period
+      │
+      ├── Validation Period
+      │
+      └── Unseen Test Period
+                 │
+                 ▼
+        Final Model Evaluation
+```
+
+Where sufficient data exists, use **walk-forward validation**:
+
+```text
+Train: 2022 ───────► Validate: 2023
+Train: 2022–2023 ──► Validate: 2024
+Train: 2022–2024 ──► Validate: 2025
+```
+
+This better represents how the system would operate operationally: historical data trains the model, and a genuinely later period is treated as unseen.
+
+### 2. Validation Metrics
+
+| Component                 | Primary Metrics                                           | Purpose                                                                                              |
+| ------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Forecast-error regression | MAE, RMSE, R²                                             | How accurately expected forecast error is estimated                                                  |
+| Bust classification       | Precision, Recall, F1, ROC-AUC, PR-AUC                    | How well high-error/bust cases are detected                                                          |
+| Probability quality       | Brier Score, calibration curve                            | Whether a predicted 70% probability behaves approximately like a 70% event frequency over many cases |
+| Confidence                | MAE/correlation against realized reliability, calibration | Whether confidence meaningfully tracks forecast reliability                                          |
+| Historical baseline       | MAE, RMSE, bust rate                                      | Compare AI with simple historical rules                                                              |
+| Explainability            | SHAP consistency, perturbation tests                      | Verify explanations reflect model behavior                                                           |
+| Data pipeline             | Missing %, duplicate %, invalid %, alignment rate         | Measure input-data quality                                                                           |
+| API                       | Latency, throughput, error rate                           | Operational performance                                                                              |
+| UI                        | Load time, interaction success, accessibility issues      | Dashboard usability                                                                                  |
+
+### 3. Key Scientific Validation
+
+For a selected historical case:
+
+```text
+Historical NWP Forecast
+        │
+        ▼
+AI predicts:
+Bust Probability = 0.78
+Confidence = 0.22
+        │
+        ▼
+Actual Observation becomes available
+        │
+        ▼
+Calculate Forecast Error
+        │
+        ▼
+Compare:
+Predicted Reliability ↔ Actual Forecast Error
+```
+
+A successful demonstration should show that **cases assigned higher bust probability tend, over many historical cases, to have larger realized forecast errors**. A single correct or incorrect prediction should not be treated as proof of model quality.
+
+### 4. Important Anti-Leakage Rules
+
+The following information must **not** be available to the model when generating a real-time prediction:
+
+* Future observation for the target valid time
+* Actual forecast error for the target forecast
+* Future-derived historical statistics
+* Post-event weather information
+* Any feature calculated using the target observation
+* Any information that would not have been available when the forecast was issued
+
+For example:
+
+```text
+Forecast issued: 28 Sep
+Prediction target: 3 Oct
+
+Allowed:
+✓ NWP forecast issued on 28 Sep
+✓ Historical errors available up to 28 Sep
+✓ Atmospheric conditions available at prediction time
+✓ Previous forecast-run changes
+✓ Historical bust rates
+
+Not allowed:
+✗ Actual weather on 3 Oct
+✗ Forecast error calculated using 3 Oct observation
+✗ Information generated after 3 Oct
+```
+
+This is one of the most important validation requirements because leakage could make the AI appear highly accurate while being unusable operationally.
+
+### 5. Test Dataset Strategy
+
+The hackathon prototype should maintain three explicit datasets:
+
+| Dataset                 | Purpose                                                                 |
+| ----------------------- | ----------------------------------------------------------------------- |
+| **Training Dataset**    | Train XGBoost regression/classification models                          |
+| **Validation Dataset**  | Tune hyperparameters and probability calibration                        |
+| **Unseen Test Dataset** | Final, untouched evaluation                                             |
+| **Demo Dataset**        | Fixed historical/current-style data used for the hackathon presentation |
+
+The **unseen test dataset must not be repeatedly used to tune the model**.
+
+### 6. Minimum MVP Validation
+
+For the hackathon, prioritize:
+
+1. Data validation
+2. Correct forecast–observation matching
+3. Correct error calculation
+4. Bust-label validation
+5. Temporal train/test split
+6. XGBoost regression/classification evaluation
+7. Probability calibration
+8. SHAP explanation verification
+9. Day 1–Day 10 validation
+10. India map/API consistency
+11. Missing/stale-data handling
+12. End-to-end demo
+13. Baseline comparison
+14. Scientific/domain review of representative cases
+
+### 7. Final Acceptance Criteria
+
+The prototype is considered technically validated when:
+
+* Historical forecast and observation records are correctly time- and location-matched.
+* Forecast errors can be independently reproduced.
+* No future information leaks into model features.
+* Bust labels are generated deterministically using documented thresholds.
+* ML performance is reported on an unseen historical period.
+* A simple baseline is provided for comparison.
+* Bust probabilities are calibrated and remain between 0 and 1.
+* Confidence scores remain within the defined range.
+* Day 1–Day 10 predictions are correctly associated with their lead times.
+* Every prediction is traceable to its forecast run, region, variable, model version, and data source.
+* SHAP explanations correspond to actual model inputs.
+* Missing or stale data results in a safe degraded state rather than fabricated confidence.
+* AI reliability alerts are separate from official weather warnings.
+* The dashboard values agree with the API values.
+* The complete **NWP → historical error → ML → bust probability → confidence → explanation → map/API** workflow runs successfully.
+* Limitations and validation results are documented alongside the prototype.

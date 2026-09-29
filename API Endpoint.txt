@@ -1,0 +1,826 @@
+# API Contract / Endpoint Document
+
+**Project:** AI-Based Forecast Bust Detection for Medium-Range Weather Forecasts
+**Problem Statement:** 26079 – MoES / NCMRWF
+**API Style:** REST
+**Base Path:** `/api/v1`
+**Backend:** FastAPI + Python
+**Data Format:** JSON
+**Authentication:** Optional for hackathon MVP; API key/JWT for operational deployment
+
+---
+
+## 1. API Design Principles
+
+| Principle     | Specification                                     |
+| ------------- | ------------------------------------------------- |
+| REST          | RESTful HTTP endpoints                            |
+| Versioning    | `/api/v1`                                         |
+| Format        | JSON                                              |
+| Time          | UTC internally, ISO-8601                          |
+| Coordinates   | WGS84 latitude/longitude                          |
+| Probability   | 0–1 internally, 0–100% in UI                      |
+| Confidence    | 0–1 internally, 0–100% in UI                      |
+| Errors        | Standard HTTP status codes                        |
+| Pagination    | Required for large historical datasets            |
+| Documentation | OpenAPI/Swagger through FastAPI                   |
+| Traceability  | Prediction contains model/data source information |
+
+---
+
+# 2. API Architecture
+
+```text
+                    React Dashboard
+                           │
+                           ▼
+                    FastAPI REST API
+                           │
+        ┌──────────────────┼──────────────────┐
+        ▼                  ▼                  ▼
+   Forecast Service    ML Service       Analytics Service
+        │                  │                  │
+        └──────────────────┼──────────────────┘
+                           ▼
+                  PostgreSQL + PostGIS
+                           │
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+             NWP      Observations     ERA5
+```
+
+---
+
+# 3. Endpoint Summary
+
+| Method | Endpoint                         | Purpose                     |
+| ------ | -------------------------------- | --------------------------- |
+| GET    | `/health`                        | API health                  |
+| GET    | `/regions`                       | List regions                |
+| GET    | `/regions/{region_id}`           | Region details              |
+| GET    | `/forecast`                      | Get NWP forecast            |
+| GET    | `/forecast/{forecast_id}`        | Forecast details            |
+| GET    | `/confidence`                    | Get confidence prediction   |
+| GET    | `/confidence/10day`              | Day 1–Day 10 confidence     |
+| GET    | `/map/confidence`                | Map-ready confidence data   |
+| POST   | `/predict/bust`                  | Generate bust prediction    |
+| GET    | `/predictions/{prediction_id}`   | Prediction details          |
+| GET    | `/explanation/{prediction_id}`   | AI explanation              |
+| GET    | `/analytics/error`               | Historical error statistics |
+| GET    | `/analytics/trends`              | Forecast-error trends       |
+| GET    | `/alerts`                        | Active alerts               |
+| GET    | `/alerts/{alert_id}`             | Alert details               |
+| POST   | `/alerts/{alert_id}/acknowledge` | Acknowledge alert           |
+| POST   | `/data/upload`                   | Upload weather data         |
+| GET    | `/models`                        | Model versions              |
+| GET    | `/data-quality`                  | Data-quality status         |
+
+---
+
+# 4. Health API
+
+## `GET /api/v1/health`
+
+Checks whether the API and required services are available.
+
+### Response `200`
+
+```json
+{
+  "status": "healthy",
+  "service": "forecast-bust-api",
+  "version": "1.0.0",
+  "database": "connected",
+  "ml_service": "available",
+  "timestamp": "2026-09-28T06:30:00Z"
+}
+```
+
+---
+
+# 5. Regions API
+
+## `GET /api/v1/regions`
+
+Returns available geographic regions.
+
+### Query Parameters
+
+```text
+state
+district
+region_type
+```
+
+### Example
+
+```http
+GET /api/v1/regions?state=Maharashtra
+```
+
+### Response
+
+```json
+{
+  "count": 2,
+  "regions": [
+    {
+      "region_id": "MH_MUM",
+      "region_name": "Mumbai",
+      "state": "Maharashtra",
+      "latitude": 19.076,
+      "longitude": 72.877
+    },
+    {
+      "region_id": "MH_PUN",
+      "region_name": "Pune",
+      "state": "Maharashtra",
+      "latitude": 18.5204,
+      "longitude": 73.8567
+    }
+  ]
+}
+```
+
+---
+
+# 6. Region Details
+
+## `GET /api/v1/regions/{region_id}`
+
+### Example
+
+```http
+GET /api/v1/regions/MH_MUM
+```
+
+### Response
+
+```json
+{
+  "region_id": "MH_MUM",
+  "region_name": "Mumbai",
+  "state": "Maharashtra",
+  "district": "Mumbai",
+  "latitude": 19.076,
+  "longitude": 72.877,
+  "elevation": 14.0
+}
+```
+
+---
+
+# 7. Forecast API
+
+## `GET /api/v1/forecast`
+
+Returns NWP forecast information.
+
+### Query Parameters
+
+| Parameter      | Required | Example                |
+| -------------- | -------- | ---------------------- |
+| `region_id`    | Yes      | `MH_MUM`               |
+| `lead_day`     | No       | `5`                    |
+| `variable`     | No       | `rainfall`             |
+| `forecast_run` | No       | `2026-09-28T00:00:00Z` |
+
+### Example
+
+```http
+GET /api/v1/forecast?region_id=MH_MUM&lead_day=5&variable=rainfall
+```
+
+### Response
+
+```json
+{
+  "region_id": "MH_MUM",
+  "forecast_run": "2026-09-28T00:00:00Z",
+  "valid_time": "2026-10-03T00:00:00Z",
+  "lead_day": 5,
+  "variable": "rainfall",
+  "value": 84.2,
+  "unit": "mm",
+  "source": "NWP"
+}
+```
+
+---
+
+# 8. Confidence API
+
+## `GET /api/v1/confidence`
+
+Returns the AI reliability prediction.
+
+### Example
+
+```http
+GET /api/v1/confidence?region_id=MH_MUM&lead_day=5&variable=rainfall
+```
+
+### Response
+
+```json
+{
+  "region_id": "MH_MUM",
+  "lead_day": 5,
+  "variable": "rainfall",
+  "bust_probability": 0.78,
+  "confidence_score": 0.22,
+  "risk_level": "HIGH",
+  "expected_error": 42.7,
+  "model_version": "xgb_v1.3"
+}
+```
+
+---
+
+# 9. 10-Day Confidence API
+
+## `GET /api/v1/confidence/10day`
+
+Returns Day 1–Day 10 predictions.
+
+### Example
+
+```http
+GET /api/v1/confidence/10day?region_id=MH_MUM&variable=rainfall
+```
+
+### Response
+
+```json
+{
+  "region_id": "MH_MUM",
+  "variable": "rainfall",
+  "forecast_date": "2026-09-28",
+  "days": [
+    {
+      "lead_day": 1,
+      "bust_probability": 0.12,
+      "confidence": 0.88,
+      "risk_level": "LOW"
+    },
+    {
+      "lead_day": 2,
+      "bust_probability": 0.19,
+      "confidence": 0.81,
+      "risk_level": "LOW"
+    },
+    {
+      "lead_day": 3,
+      "bust_probability": 0.31,
+      "confidence": 0.69,
+      "risk_level": "MODERATE"
+    },
+    {
+      "lead_day": 4,
+      "bust_probability": 0.56,
+      "confidence": 0.44,
+      "risk_level": "MODERATE"
+    },
+    {
+      "lead_day": 5,
+      "bust_probability": 0.78,
+      "confidence": 0.22,
+      "risk_level": "HIGH"
+    }
+  ]
+}
+```
+
+---
+
+# 10. Confidence Map API
+
+## `GET /api/v1/map/confidence`
+
+This endpoint is specifically designed for the India map.
+
+### Query Parameters
+
+```text
+lead_day
+variable
+risk_level
+state
+```
+
+### Example
+
+```http
+GET /api/v1/map/confidence?lead_day=5&variable=rainfall
+```
+
+### Response
+
+```json
+{
+  "lead_day": 5,
+  "variable": "rainfall",
+  "generated_at": "2026-09-28T06:30:00Z",
+  "regions": [
+    {
+      "region_id": "MH_MUM",
+      "latitude": 19.076,
+      "longitude": 72.877,
+      "bust_probability": 0.78,
+      "confidence": 0.22,
+      "risk_level": "HIGH"
+    },
+    {
+      "region_id": "RJ_JPR",
+      "latitude": 26.912,
+      "longitude": 75.787,
+      "bust_probability": 0.18,
+      "confidence": 0.82,
+      "risk_level": "LOW"
+    }
+  ]
+}
+```
+
+The frontend can directly convert these points into the **forecast confidence map**.
+
+---
+
+# 11. Bust Prediction API
+
+## `POST /api/v1/predict/bust`
+
+Used when a new forecast needs to be evaluated.
+
+### Request
+
+```json
+{
+  "region_id": "MH_MUM",
+  "lead_day": 5,
+  "variable": "rainfall",
+  "forecast_value": 84.2,
+  "historical_mae": 31.6,
+  "historical_rmse": 42.1,
+  "historical_bust_rate": 0.34,
+  "run_to_run_change": 0.38,
+  "ensemble_spread": 18.4,
+  "temperature": 30.8,
+  "humidity": 86.4,
+  "pressure": 1003.4
+}
+```
+
+### Response
+
+```json
+{
+  "prediction_id": "PRED-00125",
+  "region_id": "MH_MUM",
+  "lead_day": 5,
+  "variable": "rainfall",
+  "expected_error": 42.7,
+  "bust_probability": 0.78,
+  "confidence_score": 0.22,
+  "risk_level": "HIGH",
+  "model_version": "xgb_v1.3"
+}
+```
+
+---
+
+# 12. Prediction Details API
+
+## `GET /api/v1/predictions/{prediction_id}`
+
+### Example
+
+```http
+GET /api/v1/predictions/PRED-00125
+```
+
+### Response
+
+```json
+{
+  "prediction_id": "PRED-00125",
+  "region_id": "MH_MUM",
+  "forecast_run": "2026-09-28T00:00:00Z",
+  "valid_time": "2026-10-03T00:00:00Z",
+  "lead_day": 5,
+  "variable": "rainfall",
+  "expected_error": 42.7,
+  "bust_probability": 0.78,
+  "confidence_score": 0.22,
+  "risk_level": "HIGH",
+  "model_version": "xgb_v1.3",
+  "predicted_at": "2026-09-28T06:30:00Z"
+}
+```
+
+---
+
+# 13. Explainability API
+
+## `GET /api/v1/explanation/{prediction_id}`
+
+Returns the reasons behind the prediction.
+
+### Example
+
+```http
+GET /api/v1/explanation/PRED-00125
+```
+
+### Response
+
+```json
+{
+  "prediction_id": "PRED-00125",
+  "explanation": [
+    {
+      "feature": "ensemble_spread",
+      "value": 18.4,
+      "impact": "HIGH",
+      "shap_value": 0.31
+    },
+    {
+      "feature": "run_to_run_change",
+      "value": 0.38,
+      "impact": "HIGH",
+      "shap_value": 0.24
+    },
+    {
+      "feature": "historical_mae",
+      "value": 31.6,
+      "impact": "MEDIUM",
+      "shap_value": 0.17
+    }
+  ]
+}
+```
+
+---
+
+# 14. Historical Error API
+
+## `GET /api/v1/analytics/error`
+
+Returns historical forecast performance.
+
+### Query Parameters
+
+```text
+region_id
+variable
+lead_day
+start_date
+end_date
+```
+
+### Example
+
+```http
+GET /api/v1/analytics/error?region_id=MH_MUM&variable=rainfall&lead_day=5
+```
+
+### Response
+
+```json
+{
+  "region_id": "MH_MUM",
+  "variable": "rainfall",
+  "lead_day": 5,
+  "statistics": {
+    "mae": 31.6,
+    "rmse": 42.1,
+    "bias": 4.8,
+    "bust_rate": 0.34,
+    "sample_count": 842
+  }
+}
+```
+
+---
+
+# 15. Error Trend API
+
+## `GET /api/v1/analytics/trends`
+
+Used for charts showing forecast reliability over time.
+
+### Example
+
+```http
+GET /api/v1/analytics/trends?region_id=MH_MUM&variable=rainfall
+```
+
+### Response
+
+```json
+{
+  "region_id": "MH_MUM",
+  "variable": "rainfall",
+  "data": [
+    {
+      "date": "2026-09-01",
+      "mae": 22.4,
+      "bust_rate": 0.21
+    },
+    {
+      "date": "2026-09-15",
+      "mae": 28.7,
+      "bust_rate": 0.27
+    },
+    {
+      "date": "2026-09-28",
+      "mae": 31.6,
+      "bust_rate": 0.34
+    }
+  ]
+}
+```
+
+---
+
+# 16. Alerts API
+
+## `GET /api/v1/alerts`
+
+Returns active AI forecast-reliability alerts.
+
+### Query Parameters
+
+```text
+region_id
+risk_level
+alert_type
+status
+```
+
+### Response
+
+```json
+{
+  "count": 1,
+  "alerts": [
+    {
+      "alert_id": "ALT-00125",
+      "region_id": "MH_MUM",
+      "alert_type": "FORECAST_BUST",
+      "variable": "rainfall",
+      "lead_day": 5,
+      "bust_probability": 0.78,
+      "confidence": 0.22,
+      "risk_level": "HIGH",
+      "status": "ACTIVE",
+      "generated_at": "2026-09-28T06:30:00Z"
+    }
+  ]
+}
+```
+
+---
+
+# 17. Alert Details API
+
+## `GET /api/v1/alerts/{alert_id}`
+
+Returns complete alert information.
+
+```json
+{
+  "alert_id": "ALT-00125",
+  "prediction_id": "PRED-00125",
+  "region_id": "MH_MUM",
+  "variable": "rainfall",
+  "lead_day": 5,
+  "risk_level": "HIGH",
+  "bust_probability": 0.78,
+  "confidence": 0.22,
+  "status": "ACTIVE",
+  "message": "High probability of significant forecast error.",
+  "generated_at": "2026-09-28T06:30:00Z",
+  "expires_at": "2026-10-03T00:00:00Z"
+}
+```
+
+---
+
+# 18. Alert Acknowledgement API
+
+## `POST /api/v1/alerts/{alert_id}/acknowledge`
+
+### Request
+
+```json
+{
+  "acknowledged_by": "operator"
+}
+```
+
+### Response
+
+```json
+{
+  "alert_id": "ALT-00125",
+  "status": "ACKNOWLEDGED",
+  "acknowledged_at": "2026-09-28T07:10:00Z"
+}
+```
+
+---
+
+# 19. Data Upload API
+
+## `POST /api/v1/data/upload`
+
+Used for the hackathon to upload:
+
+```text
+CSV
+NetCDF
+GRIB
+JSON
+```
+
+### Request
+
+```text
+multipart/form-data
+```
+
+### Response
+
+```json
+{
+  "upload_id": "UP-00125",
+  "filename": "forecast_20260928.nc",
+  "status": "VALIDATION_PENDING"
+}
+```
+
+---
+
+# 20. Data Quality API
+
+## `GET /api/v1/data-quality`
+
+### Response
+
+```json
+{
+  "overall_status": "GOOD",
+  "sources": [
+    {
+      "source": "NWP",
+      "status": "GOOD",
+      "last_updated": "2026-09-28T06:00:00Z"
+    },
+    {
+      "source": "OBSERVATION",
+      "status": "GOOD",
+      "last_updated": "2026-09-28T05:30:00Z"
+    }
+  ]
+}
+```
+
+---
+
+# 21. Model API
+
+## `GET /api/v1/models`
+
+Returns available model versions.
+
+### Response
+
+```json
+{
+  "models": [
+    {
+      "model_version": "xgb_v1.3",
+      "algorithm": "XGBoost",
+      "status": "ACTIVE",
+      "roc_auc": 0.86,
+      "brier_score": 0.14
+    }
+  ]
+}
+```
+
+---
+
+# 22. Standard Error Contract
+
+Every endpoint should return a consistent error structure.
+
+### Example `400 Bad Request`
+
+```json
+{
+  "error": {
+    "code": "INVALID_PARAMETER",
+    "message": "lead_day must be between 1 and 10",
+    "field": "lead_day"
+  }
+}
+```
+
+### Example `404 Not Found`
+
+```json
+{
+  "error": {
+    "code": "REGION_NOT_FOUND",
+    "message": "Region MH_XXX was not found"
+  }
+}
+```
+
+### Example `503 Service Unavailable`
+
+```json
+{
+  "error": {
+    "code": "MODEL_UNAVAILABLE",
+    "message": "AI prediction service is temporarily unavailable"
+  }
+}
+```
+
+---
+
+# 23. HTTP Status Codes
+
+| Status | Meaning                         |
+| -----: | ------------------------------- |
+|  `200` | Successful GET                  |
+|  `201` | Resource created                |
+|  `202` | Request accepted for processing |
+|  `400` | Invalid request                 |
+|  `401` | Authentication required         |
+|  `403` | Access denied                   |
+|  `404` | Resource not found              |
+|  `409` | Duplicate/conflicting resource  |
+|  `422` | Validation error                |
+|  `429` | Rate limit exceeded             |
+|  `500` | Internal server error           |
+|  `503` | Service/model/data unavailable  |
+
+---
+
+# 24. Common Response Metadata
+
+For important prediction endpoints, include:
+
+```json
+{
+  "metadata": {
+    "model_version": "xgb_v1.3",
+    "forecast_source": "NWP",
+    "observation_source": "NCEI",
+    "forecast_run": "2026-09-28T00:00:00Z",
+    "generated_at": "2026-09-28T06:30:00Z"
+  }
+}
+```
+
+This provides the **traceability/grounding** required by the project.
+
+---
+
+# 25. MVP API Set
+
+For the hackathon, you don't need to implement every endpoint immediately.
+
+Build these first:
+
+```text id="0xqzgm"
+1. GET  /api/v1/health
+
+2. GET  /api/v1/regions
+
+3. GET  /api/v1/forecast
+
+4. GET  /api/v1/confidence
+
+5. GET  /api/v1/confidence/10day
+
+6. GET  /api/v1/map/confidence
+
+7. POST /api/v1/predict/bust
+
+8. GET  /api/v1/explanation/{prediction_id}
+
+9. GET  /api/v1/analytics/error
+
+10. GET /api/v1/alerts
+```
+
+These ten endpoints are enough to demonstrate the complete flow:
+
+**Weather Data → NWP Forecast → ML Bust Detection → Confidence → Explanation → India Map → Alerts.**
+
+For the actual implementation, **FastAPI will automatically generate Swagger/OpenAPI documentation**, so the frontend team can test these contracts directly at the API documentation endpoint.

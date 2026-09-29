@@ -1,0 +1,8 @@
+{
+  "model_version": "xgb_v1.3",
+  "variable": "rainfall",
+  "patterns": [
+    "SHAP summary unavailable in this environment: ImportError('DLL load failed while importing _dynfunc: An Application Control policy has blocked this file.')"
+  ],
+  "disclaimer": "Patterns describe estimated risk of forecast error; they are not meteorological causes."
+}
