@@ -141,18 +141,18 @@ def seed_history(db, id_map: dict) -> dict:
                         climatology=clim,
                         seed=seed,
                     )
-                    db.add(
-                        Forecast(
-                            run_id=run.id,
-                            region_id=region_db_id,
-                            variable=var,
-                            forecast_run=run_time,
-                            valid_time=vt,
-                            lead_day=lead,
-                            value=fcst,
-                            unit=VARIABLE_UNITS[var],
-                        )
+                    forecast = Forecast(
+                        run_id=run.id,
+                        region_id=region_db_id,
+                        variable=var,
+                        forecast_run=run_time,
+                        valid_time=vt,
+                        lead_day=lead,
+                        value=fcst,
+                        unit=VARIABLE_UNITS[var],
                     )
+                    db.add(forecast)
+                    db.flush()  # materialize forecast.id before the error row
                     counts["forecasts"] += 1
 
                     observed = obs_row[var]
@@ -179,7 +179,7 @@ def seed_history(db, id_map: dict) -> dict:
 
                     db.add(
                         HistoricalError(
-                            forecast_id=0,  # set below after flush
+                            forecast_id=forecast.id,
                             region_id=region_db_id,
                             variable=var,
                             forecast_run=run_time,
@@ -333,7 +333,7 @@ def seed_current_run(db, id_map: dict) -> None:
     from app.services import reliability_service
 
     existing = db.query(Forecast).filter(Forecast.lead_day == 1).order_by(Forecast.forecast_run.desc()).first()
-    if existing and existing.forecast_run >= datetime(2026, 9, 28):
+    if existing and existing.forecast_run >= datetime(2026, 9, 28, tzinfo=timezone.utc):
         print("current run already seeded — skipping scoring")
         return
 

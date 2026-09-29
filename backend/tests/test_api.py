@@ -42,7 +42,7 @@ class TestHealth:
         body = res.json()
         assert body["status"] in ("healthy", "degraded")
         assert body["database"] == "connected"
-        assert body["service"] == "forecast-bust-api"
+        assert body["service"] == "atomsyn-api"
 
 
 class TestRegions:

@@ -56,7 +56,7 @@ export function Layout() {
             Prototype Notice
           </span>
           <span>
-            <b>Synthetic demonstration data</b> — not an operational weather forecast. Evaluates medium-range NWP error behavior for PS 26079.
+            <b>Synthetic demonstration data</b> — not an operational weather forecast. Demonstrates medium-range forecast reliability analysis.
           </span>
         </div>
         <NavLink to="/sources" className="text-[11px] font-semibold text-amber-950 underline hover:text-amber-800 hidden sm:inline">
@@ -72,13 +72,13 @@ export function Layout() {
             </div>
             <div>
               <div className="text-sm font-bold leading-tight text-slate-900 flex items-center gap-1.5">
-                BUSTRA
+                ATOMSYN
                 <span className="rounded bg-sky-100 px-1.5 py-0.2 text-[10px] font-bold text-sky-800 uppercase">
-                  NCMRWF / MoES
+                  Forecast Reliability
                 </span>
               </div>
               <div className="text-[11px] leading-tight text-slate-500">
-                PS 26079 · Medium-Range Forecast Bust Detection (Day 1–10)
+                AI-powered analysis of medium-range weather forecast reliability (Day 1–10)
               </div>
             </div>
           </div>
@@ -173,9 +173,9 @@ export function Layout() {
       <footer className="border-t border-slate-200 bg-white px-4 py-2.5">
         <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
           <p className="text-center sm:text-left">
-            BUSTRA Notice: The bust probability and confidence indicators are AI-derived estimates of forecast reliability based on available forecast, historical and meteorological data. BUSTRA does not constitute an official weather warning and does not replace forecasts, advisories or warnings issued by authorized meteorological agencies.
+            ATOMSYN Notice: The bust probability and confidence indicators are AI-derived estimates of forecast reliability based on available forecast, historical and meteorological data. ATOMSYN does not constitute an official weather warning and does not replace forecasts, advisories or warnings issued by authorized meteorological agencies.
           </p>
-          <div className="shrink-0 text-slate-400">MoES / NCMRWF · PS 26079</div>
+          <div className="shrink-0 text-slate-400">© 2026 ATOMSYN · Forecast Reliability</div>
         </div>
       </footer>
     </div>

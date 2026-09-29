@@ -34,7 +34,18 @@ export class ApiError extends Error {
 }
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    const contentType = String(res.headers["content-type"] ?? "").toLowerCase();
+    if (!contentType.includes("json")) {
+      return Promise.reject(
+        new ApiError(
+          "INVALID_API_RESPONSE",
+          "The API returned a non-JSON response. Check VITE_API_BASE_URL in Vercel.",
+        ),
+      );
+    }
+    return res;
+  },
   (error) => {
     const detail = error.response?.data?.detail;
     if (detail && typeof detail === "object" && detail.code) {

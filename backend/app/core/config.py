@@ -7,10 +7,15 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
-
-# Project root = two levels above this file (backend/app/core/config.py)
+# Project root = three levels above this file (backend/app/core/config.py)
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
+# Load .env first, then .env.local (project-local overrides) — both gitignored.
+# Neither overrides variables already present in the process environment:
+# explicit environment always wins (12-factor), which keeps test databases
+# and deployment overrides authoritative over checked-in defaults.
+load_dotenv(_PROJECT_ROOT / ".env")
+load_dotenv(_PROJECT_ROOT / ".env.local")
 
 
 def _default_database_url() -> str:
@@ -115,7 +120,9 @@ class Settings:
     cors_origins: list = [
         o.strip()
         for o in os.getenv(
-            "CORS_ORIGINS", "http://localhost:5173,http://localhost:3000"
+            "CORS_ORIGINS",
+            "http://localhost:5173,http://localhost:3000,"
+            "https://atmosyn-eosin.vercel.app",
         ).split(",")
         if o.strip()
     ]

@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-29T07:42:01.357885+00:00",
-  "overall_status": "WARN",
+  "generated_at": "2026-09-29T09:19:41.994105+00:00",
+  "overall_status": "PASS",
   "checks": [
     {
       "name": "missing_values",
@@ -12,9 +12,9 @@
     {
       "name": "freshness",
       "category": "timeliness",
-      "status": "WARN",
-      "affected_rows": 1,
-      "details": "Latest forecast run is 31.7h old (limit 30h)"
+      "status": "PASS",
+      "affected_rows": 0,
+      "details": "Latest forecast run is 9.3h old (limit 30h)"
     },
     {
       "name": "duplicate_keys",
@@ -41,7 +41,7 @@
   "totals": {
     "checks_run": 5,
     "fails": 0,
-    "warnings": 1,
+    "warnings": 0,
     "quarantined_rows": 0
   },
   "quarantine_file": null,

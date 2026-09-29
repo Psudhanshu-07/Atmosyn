@@ -58,10 +58,15 @@ export function DashboardPage() {
         Api.confidence10day("MH_MUM", variable).catch(() => null),
         Api.alerts().catch(() => []),
       ]);
+      // Defensive: a misconfigured deployment can return HTML instead of
+      // JSON; never let a non-array response crash the page.
+      const alertsArr: Alert[] = Array.isArray(a)
+        ? a
+        : ((a as { alerts?: unknown } | null)?.alerts as Alert[] | undefined) ?? [];
       setKpis(k);
       setMapData(m);
       setTrend(t);
-      setAlerts(a);
+      setAlerts(alertsArr);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load dashboard");
     } finally {
@@ -74,7 +79,10 @@ export function DashboardPage() {
   }, [load]);
 
   const sortedAlerts = useMemo(
-    () => [...alerts].sort((a, b) => b.bust_probability - a.bust_probability).slice(0, 5),
+    () =>
+      [...(Array.isArray(alerts) ? alerts : [])]
+        .sort((a, b) => (b?.bust_probability ?? 0) - (a?.bust_probability ?? 0))
+        .slice(0, 5),
     [alerts],
   );
 
@@ -92,7 +100,7 @@ export function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900">
-            BUSTRA Overview
+            ATOMSYN Overview
           </h1>
           <p className="text-xs text-slate-500">
             Understand where and when medium-range numerical weather forecasts (Day 1–10) may experience elevated error risk.

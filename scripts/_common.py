@@ -42,7 +42,7 @@ MAX_RETRIES = 4
 BACKOFF_BASE_SECONDS = 3.0
 HTTP_TIMEOUT_SECONDS = 90
 
-USER_AGENT = "forecast-reliability-layer/1.0 (hackathon; free non-commercial use)"
+USER_AGENT = "atomsyn-forecast-reliability/1.0 (free non-commercial use)"
 
 
 def setup_logging(name: str) -> logging.Logger:

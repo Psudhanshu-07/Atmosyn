@@ -24,9 +24,9 @@ from app.api.routers import (
 )
 
 DESCRIPTION = """
-**BUSTRA — AI-Based Forecast Bust Detection and Confidence Mapping System**
+**ATOMSYN — Forecast Reliability Platform**
 
-Problem Statement 26079 — MoES / NCMRWF
+AI-powered analysis of medium-range weather forecast reliability (Day 1–10).
 
 This API is an *AI-derived forecast reliability layer* over medium-range NWP
 forecasts. It does **not** replace or constitute an official weather forecast
@@ -59,7 +59,7 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="BUSTRA API",
+        title="ATOMSYN API",
         version=settings.app_version,
         description=DESCRIPTION,
         lifespan=lifespan,

@@ -37,7 +37,7 @@ def health(db: Session = Depends(get_db)):
     )
     return HealthResponse(
         status=status,
-        service="forecast-bust-api",
+        service="atomsyn-api",
         version=settings.app_version,
         database=db_status,
         ml_service=ml_status,
