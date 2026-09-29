@@ -78,6 +78,38 @@ UI: http://localhost:5173
 
 Docker: `docker compose up --build` (backend + frontend containers).
 
+## Production deployment (Render + Vercel)
+
+### Render API
+
+Create a Render Blueprint from the repository's `main` branch and `render.yaml`.
+Use the native Python service defined there, not the backend Dockerfile. Keep
+the Blueprint root at the repository root so `.python-version` and `ml/` are
+available. The start command seeds the Supabase database and starts FastAPI;
+health checks use `/api/v1/health`.
+
+Set these values on the Render service:
+
+- `DATABASE_URL` — Supabase **Session pooler** connection string. Use the
+  `postgresql+psycopg://` scheme and append `?sslmode=require`; keep the
+  password in Render's environment settings only.
+- `CORS_ORIGINS` — the exact Vercel origin, for example
+  `https://your-project.vercel.app` (no trailing slash).
+
+If deploying an existing Render service instead of syncing the Blueprint, set
+the same environment values in that service's dashboard.
+
+### Vercel frontend
+
+Import the same repository and set **Root Directory** to `frontend`, the Vite
+framework preset, build command `npm run build`, and output directory `dist`.
+Set `VITE_API_BASE_URL` to `https://<your-render-service>.onrender.com/api/v1`
+for Production and Preview, replacing the host with the actual Render URL.
+Vite embeds this value during the build, so redeploy Vercel after changing it.
+
+Never put `DATABASE_URL` or a Supabase secret/service-role key in Vercel or in
+the repository. The browser only needs the public API URL.
+
 ## Data sources
 
 | Source | Role | Notes |

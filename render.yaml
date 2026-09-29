@@ -12,6 +12,8 @@ services:
         value: production
       - key: GFS_AUTO_UPDATE
         value: "0"
+      - key: MODEL_PATH
+        value: ../ml/models
       - key: DATABASE_URL
         sync: false
       - key: CORS_ORIGINS
