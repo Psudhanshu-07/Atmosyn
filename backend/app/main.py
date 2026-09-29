@@ -24,7 +24,7 @@ from app.api.routers import (
 )
 
 DESCRIPTION = """
-**ATOMSYN — Forecast Reliability Platform**
+**ATMOSYN — Forecast Reliability Platform**
 
 AI-powered analysis of medium-range weather forecast reliability (Day 1–10).
 
@@ -59,7 +59,7 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="ATOMSYN API",
+        title="ATMOSYN API",
         version=settings.app_version,
         description=DESCRIPTION,
         lifespan=lifespan,

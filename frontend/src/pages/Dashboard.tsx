@@ -100,7 +100,7 @@ export function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900">
-            ATOMSYN Overview
+            ATMOSYN Overview
           </h1>
           <p className="text-xs text-slate-500">
             Understand where and when medium-range numerical weather forecasts (Day 1–10) may experience elevated error risk.

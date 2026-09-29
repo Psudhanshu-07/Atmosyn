@@ -1,8 +1,8 @@
-# ATOMSYN — Forecast Reliability Platform
+# ATMOSYN — Forecast Reliability Platform
 
 AI-powered analysis of medium-range weather forecast reliability (Day 1–10).
 
-ATOMSYN analyzes numerical weather prediction (NWP) outputs, historical
+ATMOSYN analyzes numerical weather prediction (NWP) outputs, historical
 forecast-vs-observation errors and meteorological information to estimate
 **where, when and why a forecast is more likely to be significantly wrong**.
 It is an analytical reliability layer: it does **not** replace forecasts and

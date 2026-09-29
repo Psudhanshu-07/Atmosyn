@@ -72,7 +72,7 @@ export function Layout() {
             </div>
             <div>
               <div className="text-sm font-bold leading-tight text-slate-900 flex items-center gap-1.5">
-                ATOMSYN
+                ATMOSYN
                 <span className="rounded bg-sky-100 px-1.5 py-0.2 text-[10px] font-bold text-sky-800 uppercase">
                   Forecast Reliability
                 </span>
@@ -173,9 +173,9 @@ export function Layout() {
       <footer className="border-t border-slate-200 bg-white px-4 py-2.5">
         <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
           <p className="text-center sm:text-left">
-            ATOMSYN Notice: The bust probability and confidence indicators are AI-derived estimates of forecast reliability based on available forecast, historical and meteorological data. ATOMSYN does not constitute an official weather warning and does not replace forecasts, advisories or warnings issued by authorized meteorological agencies.
+            ATMOSYN Notice: The bust probability and confidence indicators are AI-derived estimates of forecast reliability based on available forecast, historical and meteorological data. ATMOSYN does not constitute an official weather warning and does not replace forecasts, advisories or warnings issued by authorized meteorological agencies.
           </p>
-          <div className="shrink-0 text-slate-400">© 2026 ATOMSYN · Forecast Reliability</div>
+          <div className="shrink-0 text-slate-400">© 2026 ATMOSYN · Forecast Reliability</div>
         </div>
       </footer>
     </div>

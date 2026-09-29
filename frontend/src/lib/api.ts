@@ -21,7 +21,8 @@ import type {
 
 export const api = axios.create({
   baseURL:
-    (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "/api/v1",
+    (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
+    "https://atmosyn.onrender.com/api/v1",
   timeout: 15000,
 });
 
@@ -40,7 +41,7 @@ api.interceptors.response.use(
       return Promise.reject(
         new ApiError(
           "INVALID_API_RESPONSE",
-          "The API returned a non-JSON response. Check VITE_API_BASE_URL in Vercel.",
+          "The API returned a non-JSON response. Set VITE_API_BASE_URL to https://atmosyn.onrender.com/api/v1 in Vercel.",
         ),
       );
     }
